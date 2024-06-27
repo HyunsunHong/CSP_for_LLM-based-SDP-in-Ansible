@@ -1,0 +1,456 @@
+1 : start===================================================
+This code contains a code smell of type UR1 because the variable "oracle_java_version" is used before its definition. Therefore, the code is defective.
+end===================================================
+
+
+
+
+
+
+
+
+
+
+
+
+2 : start===================================================
+This code does not contain a code smell based on the provided categories. Therefore, the code is not defective. Each defined variable and task in this script does not seem to override a previous definition without considering the prior definition and does not appear to be unused or unnecessarily implemented.
+end===================================================
+
+
+
+
+
+
+
+
+
+
+
+
+3 : start===================================================
+This code does not contain a code smell. Therefore, the code is not defective.
+end===================================================
+
+
+
+
+
+
+
+
+
+
+
+
+4 : start===================================================
+This code does not contain a code smell. Therefore, the code is not defective.
+end===================================================
+
+
+
+
+
+
+
+
+
+
+
+
+5 : start===================================================
+This code contains a code smell of type HP1, because "set_fact" is used when both the expression and all task conditions already have higher precedence. Therefore, the code is defective.
+end===================================================
+
+
+
+
+
+
+
+
+
+
+
+
+6 : start===================================================
+This code contains a code smell of type HP1, because the "set_fact" module is unnecessarily used when the expression and all task conditions already took higher precedence. However, the actual "set_fact" keyword is not present in the given script. It may be a good idea to review whether any current variable assignments may be unnecessary or if other precedence rules exist that fulfill the same purpose. If not, the code is not defective.
+end===================================================
+
+
+
+
+
+
+
+
+
+
+
+
+7 : start===================================================
+This code contains a code smell of type HP1, because there is unnecessary use of "register: rgwstatus" when the command "/etc/init.d/radosgw status" is already checking for the RGW status. Therefore, the code is defective.
+end===================================================
+
+
+
+
+
+
+
+
+
+
+
+
+8 : start===================================================
+This script does not contain any of the code smells specified. Therefore, this Ansible script is not defective. However, it is always a good practice to review and test the scripts in the system where they will be deployed.
+end===================================================
+
+
+
+
+
+
+
+
+
+
+
+
+9 : start===================================================
+This code contains a code smell of type HP1, because "set_fact" is unnecessarily used when the expressions could already took higher precedence. Therefore, the code is defective.
+end===================================================
+
+
+
+
+
+
+
+
+
+
+
+
+10 : start===================================================
+This code contains a code smell of type HP1. The set_fact modules used to define 'agent_listenip' and 'agent_ip' are unnecessarily used when both the expression and all task conditions already took higher precedence. Thus, the code is defective.
+end===================================================
+
+
+
+
+
+
+
+
+
+
+
+
+11 : start===================================================
+This code contains a code smell of type HP2, because "include_vars" is unnecessarily used when it will be executed unconditionally. Therefore, the code is defective.
+end===================================================
+
+
+
+
+
+
+
+
+
+
+
+
+12 : start===================================================
+This script appears to contain a UR2 code smell. The "zabbix_agent_ip" is redefined without referencing its previous definition at two points ("Get IP of agent_listeninterface when no agent_listenip specified" and "Set default ip address for zabbix_agent_ip") potentially changing the variable value unpredictably. Therefore, the code might be defective.
+end===================================================
+
+
+
+
+
+
+
+
+
+
+
+
+13 : start===================================================
+This code contains a code smell of type UO1 because "es_script_dir" is redefined in the second set_fact action, without considering the initial declaration in the first set_fact. It could potentially lead to problems if "es_config['path.scripts']" is not defined, as it would remove the previous setting of "es_script_dir". Therefore, the code is considered defective.
+end===================================================
+
+
+
+
+
+
+
+
+
+
+
+
+14 : start===================================================
+This code contains a code smell of type UR1, because the variable "force_install" is overridden by a new value under certain conditions. Therefore, the code is defective.
+end===================================================
+
+
+
+
+
+
+
+
+
+
+
+
+15 : start===================================================
+This code contains a code smell of type UO1. The variable "es_script_dir" is being redefined where a new definition overrides a previous definition without taking the previous definition into account. Therefore, the code may be defective.
+end===================================================
+
+
+
+
+
+
+
+
+
+
+
+
+16 : start===================================================
+This code contains a code smell of type HP1, it unnecessarily uses "set_fact: es_plugins_reinstall" when both the expression and all task conditions already took higher precedence. Therefore, the code is defective.
+end===================================================
+
+
+
+
+
+
+
+
+
+
+
+
+17 : start===================================================
+This code does not appear to have any code smell based on provided categories. The variables are well defined and there appears to be no superfluous or redundant definitions. Furthermore, higher-precedence expressions and task conditions do not seem to be unnecessarily executed using either "set_fact" or "include_vars". Therefore, the code is not defective according to the given categories.
+end===================================================
+
+
+
+
+
+
+
+
+
+
+
+
+18 : start===================================================
+This code does not contain a code smell as per the provided categories. Therefore, the code is not defective.
+end===================================================
+
+
+
+
+
+
+
+
+
+
+
+
+19 : start===================================================
+This code does not contain a code smell. The Ansible script is not defective as it does not show any of the six categories of code smells you defined above.
+end===================================================
+
+
+
+
+
+
+
+
+
+
+
+
+20 : start===================================================
+This code has a code smell of type UO1 specifically on the tasks of installing requirements and dependencies. The use of the "with_items" keyword is actually a sign of a code smell due to overriding of a previous definition without considering it which could result in problematic results. Therefore, the code is found to be defective.
+end===================================================
+
+
+
+
+
+
+
+
+
+
+
+
+21 : start===================================================
+This code does not contain any of the six categories of Ansible script code smells. Therefore, the code is not defective.
+end===================================================
+
+
+
+
+
+
+
+
+
+
+
+
+22 : start===================================================
+This Ansible script does not seem to contain any identifiable code smells according to the provided categories. This script appears to be doing a pretty straightforward task, installing various packages under specific conditions. It is not easy to establish if a variable's value would unpredictably change or if there is unnecessary usage of "set_fact" and "include_vars". Therefore, this code is not defective based on the provided categories of code smells.
+end===================================================
+
+
+
+
+
+
+
+
+
+
+
+
+23 : start===================================================
+This code does not contain a code smell. There aren't any variables being redefined or overridden, and the "set_fact" and "include_vars" are not being used unnecessarily either. Therefore, the code is not defective.
+end===================================================
+
+
+
+
+
+
+
+
+
+
+
+
+24 : start===================================================
+This code does not directly contain any of the six defined code smells mentioned earlier. However, the overall code structure can be improved for readability and maintainability. Therefore, the code is considered not defective but could benefit from refinement.
+end===================================================
+
+
+
+
+
+
+
+
+
+
+
+
+25 : start===================================================
+This code contains a code smell of type HP1, because "set_fact" is unnecessarily used when both the expression and all task conditions already took higher precedence. Thus, the code is defective.
+end===================================================
+
+
+
+
+
+
+
+
+
+
+
+
+26 : start===================================================
+This code contains code smells of type UO1 and UR2. Initial setter of 'windows_arch' is overridden unconditionally on line number 11, which suggests an unintended override smell which should be removed or merged into the subsequent setter. The variable 'zabbix_win_exe_path' has been redefined at line number 20 while it had already been defined at line number 15, which suggests an upstream redefinition smell. Therefore, this code is defective.
+end===================================================
+
+
+
+
+
+
+
+
+
+
+
+
+27 : start===================================================
+This code contains a code smell of type HP1, because there's an Unnecessary use of set_fact for variable "es_same_keystore". The value of this variable is derived directly from the condition "when: es_ssl_keystore == es_ssl_truststore". Therefore, it's not necessary to use "set_fact" to assign the value, leading to a code smell. Apart from this, the variable "es_same_keystore" is used later in other tasks as a condition, but its value can be directly determined from "es_ssl_keystore == es_ssl_truststore". Therefore, the code is defective.
+end===================================================
+
+
+
+
+
+
+
+
+
+
+
+
+28 : start===================================================
+This code does not appear to contain any of the mentioned code smells. All variables are defined and used accordingly, and neither "set_fact" nor "include_vars" are used in an unnecessary manner. Therefore, the code is likely not defective.
+end===================================================
+
+
+
+
+
+
+
+
+
+
+
+
+29 : start===================================================
+This code contains a code smell of type UO1 and UO2. 
+
+- UO1: The "java_state" variable has been defined and later overridden under the conditions of "update_java == true", without taking into account the previous definition, which could lead to unintended results.
+
+- UO2: The "java_state" variable has been defined but is unused before getting redefined in the condition "update_java == true". 
+
+Therefore, the code is defective.
+end===================================================
+
+
+
+
+
+
+
+
+
+
+
+
+30 : start===================================================
+This code does not contain a code smell. All variables and facts are used effectively and no unnecessary definitions are present. The set_fact is used to define both conditionally and unconditionally aspects like plugins to remove or install, which are needed in the tasks.
+end===================================================
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,127 @@
+The following is six categories of code smells in Ansible script. You can safely assume that the script is defective if it contains a code smell.
+1. UR1: Due to an impure initialiser, the variable value may have changed.
+2. UR2: The upstream variable has been redefined, so the variable value may have changed.
+3. UO1: A new definition overrides a previous definition at a higher precedence without taking the previous definition into account.
+4. UO2: A variable definition is manifested while a previous definition already exists, so the definition is unused.
+5. HP1: "set_fact" is unnecessarily used when both the expression and all task conditions already took higher precedence.
+6. HP2: "include_vars" is unnecessarily used when it will be executed unconditionally.
+
+The followings are example of Ansible scripts.
+Q1: 
+---
+- name: set_facts | Setting Debian/Ubuntu Pre-Reqs
+  set_fact:
+    influxdb_pre_req_packages:
+      - git
+      - python-dev
+      - python-pip
+      - python-setuptools
+      - python-virtualenv
+      - python3-dev
+      - python3-pip
+      - python3-setuptools
+      - python3-venv
+      - sshpass
+      - virtualenv
+  when:
+    - ansible_os_family == "Debian"
+    - ansible_python_version is version('3', '<')
+
+- name: set_facts | Setting Debian/Ubuntu Pre-Reqs
+  set_fact:
+    influxdb_pre_req_packages:
+      - git
+      - python3-dev
+      - python3-pip
+      - python3-setuptools
+      - python3-venv
+      - sshpass
+      - virtualenv
+  when:
+    - ansible_os_family == "Debian"
+    - ansible_python_version is version('3', '>=')
+
+- name: set_facts | Setting RedHat Facts
+  set_fact:
+    influxdb_pre_req_packages:
+      - git
+      - python-devel
+      - python-dnf
+      - python-pip
+      - python-setuptools
+      - python-virtualenv
+      - sshpass
+  when:
+    - ansible_os_family == "RedHat"
+    - ansible_python_version is version('3', '<')
+
+- name: set_facts | Setting RedHat Facts
+  set_fact:
+    influxdb_pre_req_packages:
+      - git
+      - python3-devel
+      - python3-pip
+      - python3-setuptools
+      - python3-virtualenv
+      - sshpass
+  when:
+    - ansible_os_family == "RedHat"
+    - ansible_python_version is version('3', '>=')
+A1: This code contains a code smell of type UO1, because Potential unintended unconditional override of variable "inﬂuxdb_pre_req_packages@2".. Therefore, the code is defective.
+Q2: 
+---
+- name: set_facts | Setting Debian/Ubuntu Facts
+  ansible.builtin.set_fact:
+    influxdb_pre_req_packages:
+      - apt-transport-https
+  when: ansible_os_family == "Debian"
+A2: This code does not contain a code smell, because it is a fixed version of the above example. Therefore, the code is not defective.
+
+Q: 
+---
+
+- name: Check if easy-rsa 2.x is available from the system
+  stat:
+    path: /usr/share/easy-rsa/build-ca
+  register: openvpn_easyrsa_check
+  when: openvpn_use_system_easyrsa | bool
+
+- name: Fail if system rsa is not present
+  fail:
+    msg: >-
+      EasyRSA 2.x is not present in /usr/share/easy-rsa.
+      Ensure the easy-rsa package is installed or disable the
+      `openvpn_use_system_easyrsa` option.
+  when:
+    - openvpn_use_system_easyrsa | bool
+    - not openvpn_easyrsa_check.stat.exists | bool
+
+- name: Extract easy-rsa files
+  unarchive:
+    src: easy-rsa.tar.gz
+    dest: "{{ openvpn_etcdir }}"
+  when: not openvpn_use_system_easyrsa | bool
+
+# TODO revisit this in relation to
+# https://github.com/Stouts/Stouts.openvpn/pull/107
+- name: Fix openssl.cnf path on Debian Stretch/Ubuntu Bionic
+  file:
+    src: "{{ openvpn_etcdir + '/easy-rsa/openssl-1.0.0.cnf' }}"
+    dest: "{{ openvpn_etcdir + '/easy-rsa/openssl.cnf' }}"
+    state: link
+  when:
+    - ansible_distribution_release == 'stretch' or
+      ansible_distribution_release == 'bionic'
+    - not openvpn_use_system_easyrsa | bool
+
+- name: Fix openssl.cnf path on Debian Stretch/Ubuntu Bionic with system easyrsa
+  file:
+    src: /usr/share/easy-rsa/openssl-1.0.0.cnf
+    dest: /usr/share/easy-rsa/openssl.cnf
+    state: link
+  when:
+    - ansible_distribution_release == 'stretch' or
+      ansible_distribution_release == 'bionic'
+    - openvpn_use_system_easyrsa | bool
+
+A:

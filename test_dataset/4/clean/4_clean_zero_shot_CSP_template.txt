@@ -1,0 +1,41 @@
+The following is six categories of code smells in Ansible script. You can safely assume that the script is defective if it contains a code smell.
+1. UR1: Due to an impure initialiser, the variable value may have changed.
+2. UR2: The upstream variable has been redefined, so the variable value may have changed.
+3. UO1: A new definition overrides a previous definition at a higher precedence without taking the previous definition into account.
+4. UO2: A variable definition is manifested while a previous definition already exists, so the definition is unused.
+5. HP1: "set_fact" is unnecessarily used when both the expression and all task conditions already took higher precedence.
+6. HP2: "include_vars" is unnecessarily used when it will be executed unconditionally.
+
+Refering above Ansible code smell theory, review the provided Ansible code for potential software defect(s).
+After your review, assign the code a label from [Defective, None-defective].
+‘Defective’ implies that there is at least one software defect. ‘None-defective’ implies that there is no software defect.
+Return only the label.
+Code: 
+# Standards: 0.11
+---
+
+# 5.5 Ensure access to the su command is restricted
+
+- name: 5.5 - Ensure access to the su command is restricted
+  lineinfile:
+    regexp: "^auth\\s.*\\spam_wheel.so\\s"
+    line: "auth required pam_wheel.so use_uid"
+    dest: "/etc/pam.d/su"
+  tags:
+    - level-1
+    - section-5
+    - "5.5"
+    - scored
+
+- name: 5.5 - Configure wheel group members who can access the su command
+  lineinfile:
+    regexp: "^wheel:"
+    line: "wheel:x:10:{{ cis_wheel_group_members }}"
+    dest: "/etc/group"
+  tags:
+    - level-1
+    - section-5
+    - "5.5"
+    - scored
+
+Label:

@@ -1,0 +1,229 @@
+The following is six categories of code smells in Ansible script. You can safely assume that the script is defective if it contains a code smell.
+1. UR1: Due to an impure initialiser, the variable value may have changed.
+2. UR2: The upstream variable has been redefined, so the variable value may have changed.
+3. UO1: A new definition overrides a previous definition at a higher precedence without taking the previous definition into account.
+4. UO2: A variable definition is manifested while a previous definition already exists, so the definition is unused.
+5. HP1: "set_fact" is unnecessarily used when both the expression and all task conditions already took higher precedence.
+6. HP2: "include_vars" is unnecessarily used when it will be executed unconditionally.
+
+The followings are example of Ansible scripts.
+Q1: 
+---
+- set_fact:
+    apt_packages: "{{ __apt_packages|list }}"
+  when: apt_packages|default(None) == None
+
+- set_fact:
+    distcc_start: "{{ __distcc_start|list }}"
+  when: distcc_start|default(None) == None
+
+- set_fact:
+    distcc_allowed_nets: "{{ __distcc_allowed_nets|list }}"
+  when: distcc_allowed_nets|default(None) == None
+
+- set_fact:
+    distcc_listener: "{{ __distcc_listener|list }}"
+  when: distcc_listener|default(None) == None
+
+- set_fact:
+    distcc_nice: "{{ __distcc_nice }}"
+  when: distcc_nice|default(None) == None
+
+- set_fact:
+    distcc_jobs: "{{ __distcc_jobs }}"
+  when: distcc_jobs|default(None) == None
+
+- set_fact:
+    distcc_zeroconf: "{{ __distcc_zeroconf }}"
+  when: distcc_zeroconf|default(None) == None
+
+- set_fact:
+    distcc_hosts: "{{ __distcc_hosts|list }}"
+  when: distcc_hosts|default(None) == None
+
+- set_fact:
+    ccache_dir: "{{ __ccache_dir }}"
+  when: ccache_dir|default(None) == None
+
+- debconf:
+    name: distcc
+    question: distcc/daemon
+    value: "{{ distcc_start }}"
+    vtype: boolean
+
+- debconf:
+    name: distcc
+    question: distcc/daemon-allow
+    value: "{{ distcc_allowed_nets|join(' ') }}"
+    vtype: string
+
+- debconf:
+    name: distcc
+    question: distcc/daemon-listen
+    value: "{{ distcc_listener|join(' ') }}"
+    vtype: string
+
+- debconf:
+    name: distcc
+    question: distcc/daemon-nice
+    value: "{{ distcc_nice }}"
+    vtype: string
+
+- debconf:
+    name: distcc
+    question: distcc/daemon-jobs
+    value: "{{ distcc_jobs }}"
+    vtype: string
+
+- debconf:
+    name: distcc
+    question: distcc/daemon-zeroconf
+    value: "{{ distcc_zeroconf }}"
+    vtype: boolean
+
+- include_role:
+    name: jm1.virtual_pkg
+  vars:
+     package_name: "jm1-distcc"
+     package_depends: "{{ apt_packages }}"
+
+- template:
+    src: "{{ distribution_codename }}/etc/distcc/hosts.j2"
+    dest: /etc/distcc/hosts
+  when: distcc_hosts is defined and distcc_hosts
+
+- template:
+    src: "{{ distribution_codename }}/etc/default/distcc.j2"
+    dest: /etc/default/distcc
+  when: ccache_dir is defined and ccache_dir
+
+- set_fact:
+    apt_packages: !!null
+    distcc_start: !!null
+    distcc_allowed_nets: !!null
+    distcc_listener: !!null
+    distcc_nice: !!null
+    distcc_jobs: !!null
+    distcc_zeroconf: !!null
+    distcc_hosts: !!null
+    ccache_dir: !!null
+A1: This code contains a code smell of type UO1, because Potential unintended unconditional override of variable "distcc_allowed_nets@2".. Therefore, the code is defective.
+Q2: 
+---
+- debconf:
+    name: distcc
+    question: distcc/daemon
+    value: "{{ distcc_start }}"
+    vtype: boolean
+
+- debconf:
+    name: distcc
+    question: distcc/daemon-allow
+    value: "{{ distcc_allowed_nets|join(' ') }}"
+    vtype: string
+
+- debconf:
+    name: distcc
+    question: distcc/daemon-listen
+    value: "{{ distcc_listener|join(' ') }}"
+    vtype: string
+
+- debconf:
+    name: distcc
+    question: distcc/daemon-nice
+    value: "{{ distcc_nice }}"
+    vtype: string
+
+- debconf:
+    name: distcc
+    question: distcc/daemon-jobs
+    value: "{{ distcc_jobs }}"
+    vtype: string
+
+- debconf:
+    name: distcc
+    question: distcc/daemon-zeroconf
+    value: "{{ distcc_zeroconf }}"
+    vtype: boolean
+
+- name: Update apt cache
+  apt:
+    update_cache: yes
+    cache_valid_time: 86400 # 1 day
+
+- jm1.pkg.meta_pkg:
+    name: "jm1-distcc"
+    version: "1"
+    depends:
+    - ccache
+    - distcc
+    - distcc-pump
+
+- template:
+    src: "{{ distribution_id|join('-') }}/etc/distcc/hosts.j2"
+    dest: /etc/distcc/hosts
+  when: distcc_hosts is defined and distcc_hosts
+
+- template:
+    src: "{{ distribution_id|join('-') }}/etc/default/distcc.j2"
+    dest: /etc/default/distcc
+  when: ccache_dir is defined and ccache_dir
+A2: This code does not contain a code smell, because it is a fixed version of the above example. Therefore, the code is not defective.
+
+Q: 
+---
+
+- name: set fact java_state to present
+  set_fact: java_state="present"
+
+- name: set fact java_state to latest
+  set_fact: java_state="latest"
+  when: update_java == true
+
+- name: RedHat - Ensure Java is installed
+  become: yes
+  yum: name={{ java }} state={{java_state}}
+  when: ansible_os_family == 'RedHat'
+
+- name: Get the installed java path
+  shell: "update-alternatives --display java | grep '^/' | awk '{print $1}' | grep 1.8.0 | head -1"
+  become: yes
+  register: java_full_path
+  failed_when: False
+  changed_when: False
+  check_mode: no
+  when: ansible_os_family == 'RedHat'
+
+- name: correct java version selected
+  alternatives:
+    name: java
+    path: "{{ java_full_path.stdout }}"
+    link: /usr/bin/java
+  when: ansible_os_family == 'RedHat' and java_full_path is defined
+
+- name: Refresh java repo
+  become: yes
+  apt: update_cache=yes
+  changed_when: false
+  when: ansible_os_family == 'Debian'
+
+- name: Debian - Ensure Java is installed
+  become: yes
+  apt: name={{ java }} state={{java_state}}
+  when: ansible_os_family == 'Debian'
+
+- name: register open_jdk version
+  shell: java -version 2>&1 | grep OpenJDK
+  register: open_jdk
+  ignore_errors: yes
+  changed_when: false
+  check_mode: no
+
+#https://github.com/docker-library/openjdk/issues/19 - ensures tests pass due to java 8 broken certs
+- name: refresh the java ca-certificates
+  become: yes
+  command: /var/lib/dpkg/info/ca-certificates-java.postinst configure
+  when: ansible_distribution == 'Ubuntu' and open_jdk.rc == 0
+  changed_when: false
+
+A:

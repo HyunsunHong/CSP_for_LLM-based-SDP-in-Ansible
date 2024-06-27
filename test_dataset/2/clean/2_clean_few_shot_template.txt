@@ -1,0 +1,88 @@
+Review the provided Ansible code for potential software defect(s) based on the given examples.
+After your review, assign the code a label from [Defective, None-defective].
+‘Defective’ implies that there is at least one software defect. ‘None-defective’ implies that there is no software defect.
+Return only the label.
+Code: 
+---
+- name: set_fact arwp_plugin_is_installed as false
+  set_fact:
+    arwp_plugin_is_installed: false
+
+- name: check if plugin {{ item.slug }} is installed
+  become: yes
+  become_user: "{{ arwp_user_name }}"
+  command: wp plugin is-installed {{ item.slug }}
+  args:
+    chdir: "{{ arwp_fact_wordpress_path }}"
+  ignore_errors: yes
+  changed_when: false
+  register: is_installed
+
+- name: set_fact arwp_plugin_is_installed as true
+  set_fact:
+    arwp_plugin_is_installed: true
+  when: is_installed.rc == 0
+Label: Defective
+Code: 
+---
+- name: set_fact arwp_fact_plugin_is_installed as false
+  set_fact:
+    arwp_fact_plugin_is_installed: false
+
+- name: check if plugin {{ item.slug }} is installed
+  become: yes
+  become_user: "{{ arwp_user_name }}"
+  command: wp plugin is-installed {{ item.slug }}
+  args:
+    chdir: "{{ arwp_fact_wordpress_path }}"
+  ignore_errors: yes
+  changed_when: false
+  register: arwp_result_plugin_is_installed
+
+- name: set_fact arwp_fact_plugin_is_installed as true
+  set_fact:
+    arwp_fact_plugin_is_installed: true
+  when: arwp_result_plugin_is_installed.rc == 0
+Label: None-defective
+
+Code: 
+---
+# Standards: 0.11
+
+# 1.1.1.1 - Ensure mounting of cramfs filesystems is disabled
+
+- name: 1.1.1.1 - Check if CIS modprobe configuration file exists
+  stat:
+    path: "{{ cis_modprobe_conf_filename }}"
+  register: modprobe_1_1_1_1
+  tags:
+    - level-1
+    - section-1
+    - "1.1.1.1"
+    - scored
+
+- name: 1.1.1.1 - Ensure mounting of cramfs filesystems is disabled
+  copy:
+    dest: "{{ cis_modprobe_conf_filename }}"
+    content: "install cramfs /bin/true\n"
+  when: modprobe_1_1_1_1.stat.exists is not defined or not modprobe_1_1_1_1.stat.exists
+  tags:
+    - level-1
+    - section-1
+    - "1.1.1.1"
+    - scored
+
+- name: 1.1.1.1 - Ensure mounting of cramfs filesystems is disabled
+  lineinfile:
+    dest: "{{ cis_modprobe_conf_filename }}"
+    regexp: "^install cramfs"
+    line: "install cramfs /bin/true"
+  when: modprobe_1_1_1_1.stat.exists is defined and modprobe_1_1_1_1.stat.exists
+  tags:
+    - level-1
+    - section-1
+    - "1.1.1.1"
+    - scored
+
+
+Label:

@@ -1,0 +1,312 @@
+The following is six categories of code smells in Ansible script. You can safely assume that the script is defective if it contains a code smell.
+1. UR1: Due to an impure initialiser, the variable value may have changed.
+2. UR2: The upstream variable has been redefined, so the variable value may have changed.
+3. UO1: A new definition overrides a previous definition at a higher precedence without taking the previous definition into account.
+4. UO2: A variable definition is manifested while a previous definition already exists, so the definition is unused.
+5. HP1: "set_fact" is unnecessarily used when both the expression and all task conditions already took higher precedence.
+6. HP2: "include_vars" is unnecessarily used when it will be executed unconditionally.
+
+The followings are example of Ansible scripts.
+Q1: 
+---
+- set_fact:
+    apt_packages: "{{ __apt_packages|list }}"
+  when: apt_packages|default(None) == None
+
+- set_fact:
+    distcc_start: "{{ __distcc_start|list }}"
+  when: distcc_start|default(None) == None
+
+- set_fact:
+    distcc_allowed_nets: "{{ __distcc_allowed_nets|list }}"
+  when: distcc_allowed_nets|default(None) == None
+
+- set_fact:
+    distcc_listener: "{{ __distcc_listener|list }}"
+  when: distcc_listener|default(None) == None
+
+- set_fact:
+    distcc_nice: "{{ __distcc_nice }}"
+  when: distcc_nice|default(None) == None
+
+- set_fact:
+    distcc_jobs: "{{ __distcc_jobs }}"
+  when: distcc_jobs|default(None) == None
+
+- set_fact:
+    distcc_zeroconf: "{{ __distcc_zeroconf }}"
+  when: distcc_zeroconf|default(None) == None
+
+- set_fact:
+    distcc_hosts: "{{ __distcc_hosts|list }}"
+  when: distcc_hosts|default(None) == None
+
+- set_fact:
+    ccache_dir: "{{ __ccache_dir }}"
+  when: ccache_dir|default(None) == None
+
+- debconf:
+    name: distcc
+    question: distcc/daemon
+    value: "{{ distcc_start }}"
+    vtype: boolean
+
+- debconf:
+    name: distcc
+    question: distcc/daemon-allow
+    value: "{{ distcc_allowed_nets|join(' ') }}"
+    vtype: string
+
+- debconf:
+    name: distcc
+    question: distcc/daemon-listen
+    value: "{{ distcc_listener|join(' ') }}"
+    vtype: string
+
+- debconf:
+    name: distcc
+    question: distcc/daemon-nice
+    value: "{{ distcc_nice }}"
+    vtype: string
+
+- debconf:
+    name: distcc
+    question: distcc/daemon-jobs
+    value: "{{ distcc_jobs }}"
+    vtype: string
+
+- debconf:
+    name: distcc
+    question: distcc/daemon-zeroconf
+    value: "{{ distcc_zeroconf }}"
+    vtype: boolean
+
+- include_role:
+    name: jm1.virtual_pkg
+  vars:
+     package_name: "jm1-distcc"
+     package_depends: "{{ apt_packages }}"
+
+- template:
+    src: "{{ distribution_codename }}/etc/distcc/hosts.j2"
+    dest: /etc/distcc/hosts
+  when: distcc_hosts is defined and distcc_hosts
+
+- template:
+    src: "{{ distribution_codename }}/etc/default/distcc.j2"
+    dest: /etc/default/distcc
+  when: ccache_dir is defined and ccache_dir
+
+- set_fact:
+    apt_packages: !!null
+    distcc_start: !!null
+    distcc_allowed_nets: !!null
+    distcc_listener: !!null
+    distcc_nice: !!null
+    distcc_jobs: !!null
+    distcc_zeroconf: !!null
+    distcc_hosts: !!null
+    ccache_dir: !!null
+A1: This code contains a code smell of type UO1, because Potential unintended unconditional override of variable "distcc_allowed_nets@2".. Therefore, the code is defective.
+Q2: 
+---
+- debconf:
+    name: distcc
+    question: distcc/daemon
+    value: "{{ distcc_start }}"
+    vtype: boolean
+
+- debconf:
+    name: distcc
+    question: distcc/daemon-allow
+    value: "{{ distcc_allowed_nets|join(' ') }}"
+    vtype: string
+
+- debconf:
+    name: distcc
+    question: distcc/daemon-listen
+    value: "{{ distcc_listener|join(' ') }}"
+    vtype: string
+
+- debconf:
+    name: distcc
+    question: distcc/daemon-nice
+    value: "{{ distcc_nice }}"
+    vtype: string
+
+- debconf:
+    name: distcc
+    question: distcc/daemon-jobs
+    value: "{{ distcc_jobs }}"
+    vtype: string
+
+- debconf:
+    name: distcc
+    question: distcc/daemon-zeroconf
+    value: "{{ distcc_zeroconf }}"
+    vtype: boolean
+
+- name: Update apt cache
+  apt:
+    update_cache: yes
+    cache_valid_time: 86400 # 1 day
+
+- jm1.pkg.meta_pkg:
+    name: "jm1-distcc"
+    version: "1"
+    depends:
+    - ccache
+    - distcc
+    - distcc-pump
+
+- template:
+    src: "{{ distribution_id|join('-') }}/etc/distcc/hosts.j2"
+    dest: /etc/distcc/hosts
+  when: distcc_hosts is defined and distcc_hosts
+
+- template:
+    src: "{{ distribution_id|join('-') }}/etc/default/distcc.j2"
+    dest: /etc/default/distcc
+  when: ccache_dir is defined and ccache_dir
+A2: This code does not contain a code smell, because it is a fixed version of the above example. Therefore, the code is not defective.
+
+Q: 
+---
+# Tasks specific for RedHat systems
+
+- name: "RedHat | Use EPEL package name"
+  set_fact:
+    zabbix_agent_package: "zabbix{{ zabbix_version | regex_replace('\\.', '') }}-agent"
+    zabbix_sender_package: "zabbix{{ zabbix_version | regex_replace('\\.', '') }}-sender"
+    zabbix_get_package: "zabbix{{ zabbix_version | regex_replace('\\.', '') }}-get"
+  when:
+    - zabbix_repo == "epel"
+  tags:
+    - zabbix-agent
+    - init
+
+- name: "RedHat | Set zabbix_agent_distribution_major_version to 6 when Amazon"
+  set_fact:
+    zabbix_agent_distribution_major_version: 6
+  when:
+    - ansible_distribution == "Amazon"
+    - ansible_distribution_major_version == "NA"
+
+- name: "RedHat | Set zabbix_agent_distribution_major_version to 6 when Major Version is 2018.03"
+  set_fact:
+    zabbix_agent_distribution_major_version: 6
+  when:
+    - ansible_distribution == "Amazon"
+    - ansible_distribution_major_version == "2018"
+
+- name: "RedHat | Set zabbix_agent_distribution_major_version to 7 when Amazon 2"
+  set_fact:
+    zabbix_agent_distribution_major_version: 7
+  when:
+    - ansible_distribution == "Amazon"
+    - ansible_distribution_major_version == "2"
+
+- name: "Fedora | Override zabbix_agent_distribution_major_version for Fedora"
+  set_fact:
+    zabbix_agent_distribution_major_version: 7
+  when:
+    - ansible_distribution == "Fedora"
+
+- name: "RedHat | Install basic repo file"
+  yum_repository:
+    name: "{{ item.name }}"
+    description: "{{ item.description }}"
+    baseurl: "{{ item.baseurl }}"
+    gpgcheck: "{{ item.gpgcheck }}"
+    gpgkey: "{{ item.gpgkey }}"
+    priority: "{{ item.priority | default('99') }}"
+    state: "{{ item.state | default('present') }}"
+    proxy: "{{ zabbix_http_proxy | default(None) | default(omit) }}"
+  with_items: "{{ zabbix_repo_yum }}"
+  register: yum_repo_installed
+  become: yes
+  when:
+    zabbix_repo == "zabbix"
+  tags:
+    - zabbix-agent
+
+- name: "Do a yum clean"
+  shell: yum clean all
+  args:
+    warn: False
+  when: yum_repo_installed.changed
+  become: yes
+  tags:
+    - skip_ansible_lint
+
+- name: "RedHat | Installing zabbix-agent"
+  package:
+    pkg:
+      - "{{ zabbix_agent_package }}"
+      - "{{ zabbix_sender_package }}"
+      - "{{ zabbix_get_package }}"
+    state: "{{ zabbix_agent_package_state }}"
+  environment:
+    http_proxy: "{{ zabbix_http_proxy | default(None) | default(omit) }}"
+    https_proxy: "{{ zabbix_https_proxy | default(None) | default(omit) }}"
+  register: zabbix_agent_package_installed
+  until: zabbix_agent_package_installed is succeeded
+  become: yes
+  tags:
+    - init
+    - zabbix-agent
+
+- name: "Install policycoreutils-python"
+  package:
+    name: policycoreutils-python
+    state: installed
+  environment:
+    http_proxy: "{{ zabbix_http_proxy | default(None) | default(omit) }}"
+    https_proxy: "{{ zabbix_https_proxy | default(None) | default(omit) }}"
+  register: zabbix_agent_policycoreutils_installed
+  until: zabbix_agent_package_installed is succeeded
+  when: (zabbix_selinux | bool) and (zabbix_agent_distribution_major_version == "6" or zabbix_agent_distribution_major_version == "7")
+  become: yes
+  tags:
+    - init
+    - zabbix-agent
+
+- name: "Install python3-policycoreutils on RHEL8"
+  package:
+    name: python3-policycoreutils
+    state: installed
+  environment:
+    http_proxy: "{{ zabbix_http_proxy | default(None) | default(omit) }}"
+    https_proxy: "{{ zabbix_https_proxy | default(None) | default(omit) }}"
+  register: zabbix_agent_policycoreutils_installed
+  until: zabbix_agent_package_installed is succeeded
+  when: (zabbix_selinux | bool) and ansible_distribution_major_version == "8"
+  become: yes
+  tags:
+    - init
+    - zabbix-agent
+
+- name: "Install selinux-policy-targeted"
+  package:
+    name: selinux-policy-targeted
+    state: installed
+  register: zabbix_agent_selinuxpolicytargeted_installed
+  until: zabbix_agent_package_installed is succeeded
+  when: zabbix_selinux | bool
+  become: yes
+  tags:
+    - init
+    - zabbix-agent
+
+- name: "RedHat | Enable the service"
+  service:
+    name: "{{ zabbix_agent_service }}"
+    enabled: yes
+    use: service
+  become: yes
+  tags:
+    - zabbix-agent
+    - init
+    - service
+
+A:

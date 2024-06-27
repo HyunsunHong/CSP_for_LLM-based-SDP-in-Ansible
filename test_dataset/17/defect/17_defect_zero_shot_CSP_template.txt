@@ -1,0 +1,97 @@
+The following is six categories of code smells in Ansible script. You can safely assume that the script is defective if it contains a code smell.
+1. UR1: Due to an impure initialiser, the variable value may have changed.
+2. UR2: The upstream variable has been redefined, so the variable value may have changed.
+3. UO1: A new definition overrides a previous definition at a higher precedence without taking the previous definition into account.
+4. UO2: A variable definition is manifested while a previous definition already exists, so the definition is unused.
+5. HP1: "set_fact" is unnecessarily used when both the expression and all task conditions already took higher precedence.
+6. HP2: "include_vars" is unnecessarily used when it will be executed unconditionally.
+
+Refering above Ansible code smell theory, review the provided Ansible code for potential software defect(s).
+After your review, assign the code a label from [Defective, None-defective].
+‘Defective’ implies that there is at least one software defect. ‘None-defective’ implies that there is no software defect.
+Return only the label.
+Code: 
+---
+- name: Initialize Kubernetes master with kubeadm init.
+  command: >
+    kubeadm init
+    --pod-network-cidr={{ kubernetes_pod_network.cidr }}
+    --apiserver-advertise-address={{ kubernetes_apiserver_advertise_address | default(ansible_default_ipv4.address, true) }}
+    --kubernetes-version {{ kubernetes_version_kubeadm }}
+    --ignore-preflight-errors={{ kubernetes_ignore_preflight_errors }}
+    {{ kubernetes_kubeadm_init_extra_opts }}
+  register: kubeadmin_init
+  when: not kubernetes_init_stat.stat.exists
+
+- name: Print the init output to screen.
+  debug:
+    var: kubeadmin_init.stdout
+    verbosity: 2
+  when: not kubernetes_init_stat.stat.exists
+
+- name: Ensure .kube directory exists.
+  file:
+    path: ~/.kube
+    state: directory
+    mode: 0755
+
+- name: Symlink the kubectl admin.conf to ~/.kube/conf.
+  file:
+    src: /etc/kubernetes/admin.conf
+    dest: ~/.kube/config
+    state: link
+    mode: 0644
+
+- name: Configure Flannel networking.
+  command: "{{ item }}"
+  with_items:
+    - kubectl apply -f {{ kubernetes_flannel_manifest_file_rbac }}
+    - kubectl apply -f {{ kubernetes_flannel_manifest_file }}
+  register: flannel_result
+  changed_when: "'created' in flannel_result.stdout"
+  when: kubernetes_pod_network.cni == 'flannel'
+
+- name: Configure Calico networking.
+  command: "{{ item }}"
+  with_items:
+    - kubectl apply -f {{ kubernetes_calico_manifest_file }}
+  register: calico_result
+  changed_when: "'created' in calico_result.stdout"
+  when: kubernetes_pod_network.cni == 'calico'
+
+- name: Get Kubernetes version for Weave installation.
+  shell: kubectl version | base64 | tr -d '\n'
+  changed_when: false
+  register: kubectl_version
+  when: kubernetes_pod_network.cni == 'weave'
+
+- name: Configure Weave networking.
+  command: "{{ item }}"
+  with_items:
+    - "kubectl apply -f https://cloud.weave.works/k8s/net?k8s-version={{ kubectl_version.stdout_lines[0] }}"
+  register: weave_result
+  changed_when: "'created' in weave_result.stdout"
+  when: kubernetes_pod_network.cni == 'weave'
+
+# TODO: Check if taint exists with something like `kubectl describe nodes`
+# instead of using kubernetes_init_stat.stat.exists check.
+- name: Allow pods on master node (if configured).
+  command: "kubectl taint nodes --all node-role.kubernetes.io/master-"
+  when:
+    - kubernetes_allow_pods_on_master | bool
+    - not kubernetes_init_stat.stat.exists
+
+- name: Check if Kubernetes Dashboard UI service already exists.
+  shell: kubectl get services --namespace kube-system | grep -q kubernetes-dashboard
+  changed_when: false
+  failed_when: false
+  register: kubernetes_dashboard_service
+  when: kubernetes_enable_web_ui | bool
+
+- name: Enable the Kubernetes Web Dashboard UI (if configured).
+  command: "kubectl create -f {{ kubernetes_web_ui_manifest_file }}"
+  when:
+    - kubernetes_enable_web_ui | bool
+    - kubernetes_dashboard_service.rc != 0
+
+Label:

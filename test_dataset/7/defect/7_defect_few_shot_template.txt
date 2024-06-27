@@ -1,0 +1,121 @@
+Review the provided Ansible code for potential software defect(s) based on the given examples.
+After your review, assign the code a label from [Defective, None-defective].
+‘Defective’ implies that there is at least one software defect. ‘None-defective’ implies that there is no software defect.
+Return only the label.
+Code: 
+      - name: Network max_buf_tiny
+        shell:
+          cmd: |
+            set -o pipefail
+            lsdev | grep "Virtual I/O Ethernet Adapter" | awk '{print $1}' | xargs -I % sh -c '{ echo %; lsattr -El %; }' | awk '/ent/ { if (flag == "0" ) {tmpent=$1; flag=1}} flag && /max_buf_tiny/ && !/{{var_max_buf_tiny}}/ {print tmpent,$1,$2; flag=0}'
+        register: command_output      
+        when: ansible_distribution == 'AIX'
+        changed_when: False
+        tags: max_buf_tiny
+
+      - debug: 
+          var=command_output.stdout_lines
+        when: command_output.stdout_lines
+        tags: max_buf_tiny
+Label: Defective
+Code: 
+      - name: Network max_buf_tiny
+        shell:
+          cmd: |
+            set -o pipefail
+            lsdev | grep "Virtual I/O Ethernet Adapter" | awk '{print $1}' | xargs -I % sh -c '{ echo %; lsattr -El %; }' | awk '/ent/ { if (flag == "0" ) {tmpent=$1; flag=1 }} flag && /max_buf_tiny/ && !/{{ var_max_buf_tiny }}/ {print tmpent,$1,$2; flag=0}'
+        register: command_output
+        when: ansible_distribution == 'AIX'
+        changed_when: False
+        tags: max_buf_tiny
+
+      - debug:
+          var=command_output.stdout_lines
+        when: ansible_distribution == 'AIX' and command_output.stdout_lines
+        tags: max_buf_tiny
+Label: None-defective
+
+Code: 
+---
+## Deploy RADOS Gateway
+#
+
+- name: Copy RGW bootstrap key
+  copy: src=fetch/{{ hostvars[groups['mons'][0]]['ansible_fqdn'] }}/etc/ceph/keyring.radosgw.gateway dest=/etc/ceph/keyring.radosgw.gateway owner=root group=root mode=600
+  when: cephx
+
+- name: Set RGW bootstrap key permissions
+  file: path=/etc/ceph/keyring.radosgw.gateway mode=0600 owner=root group=root
+  when: cephx
+
+#- name: Add optimized version of the apache2 package repository
+#  apt_repository: repo='deb http://gitbuilder.ceph.com/apache2-deb-{{ ansible_lsb.codename }}-x86_64-basic/ref/master {{ ansible_lsb.codename }} main' state=present
+#
+#- name: Add optimized version of the fastcgi package repository
+#  apt_repository: repo='deb http://gitbuilder.ceph.com/libapache-mod-fastcgi-deb-{{ ansible_lsb.codename }}-x86_64-basic/ref/master {{ ansible_lsb.codename }} main' state=present
+#
+
+- name: Add Ceph extra
+  apt_repository: repo='deb http://ceph.com/packages/ceph-extras/debian {{ ansible_lsb.codename }} main' state=present
+
+- name: Install Apache, fastcgi and Rados Gateway
+  apt: pkg={{ item }} state=present
+  with_items:
+    - apache2
+    - libapache2-mod-fastcgi
+    - radosgw
+
+## Prepare Apache
+#
+
+- name: Install default httpd.conf
+  template: src=httpd.conf dest=/etc/apache2/httpd.conf owner=root group=root
+
+- name: Enable some apache mod rewrite and fastcgi
+  command: "{{ item }}"
+  with_items:
+    - a2enmod rewrite
+    - a2enmod fastcgi
+
+- name: Install Rados Gateway vhost
+  template: src=rgw.conf dest=/etc/apache2/sites-available/rgw.conf owner=root group=root
+
+## Prepare RGW
+#
+
+- name: Create RGW directory
+  file: path=/var/lib/ceph/radosgw/{{ ansible_fqdn }} state=directory owner=root group=root mode=0644
+
+- name: Enable Rados Gateway vhost and disable default site
+  command: "{{ item }}"
+  with_items:
+    - a2ensite rgw.conf
+    - a2dissite default
+  notify:
+    - restart apache2
+
+- name: Install s3gw.fcgi script
+  copy: src=s3gw.fcgi dest=/var/www/s3gw.fcgi mode=0555 owner=root group=root
+
+## If we don't perform this check Ansible will start multiple instance of radosgw
+- name: Check if RGW is started
+  command: /etc/init.d/radosgw status
+  register: rgwstatus
+  ignore_errors: True
+
+- name: Start RGW
+  command: /etc/init.d/radosgw start
+  when: rgwstatus.rc != 0
+
+- name: Create a user in radosgw
+  command: radosgw-admin --name client.radosgw.gateway user create --uid=johndoe --display-name="John Doe" --email=john@example.com
+
+- name: Create a swift subuser
+  command: radosgw-admin --name client.radosgw.gateway subuser create --uid=johndoe --subuser=johndoe:swift --access=full
+  ignore_errors: True
+
+- name: Create a swift subuser key
+  command: radosgw-admin --name client.radosgw.gateway key create --subuser=johndoe:swift --key-type=swift
+  ignore_errors: True
+
+Label:

@@ -1,0 +1,116 @@
+The following is six categories of code smells in Ansible script. You can safely assume that the script is defective if it contains a code smell.
+1. UR1: Due to an impure initialiser, the variable value may have changed.
+2. UR2: The upstream variable has been redefined, so the variable value may have changed.
+3. UO1: A new definition overrides a previous definition at a higher precedence without taking the previous definition into account.
+4. UO2: A variable definition is manifested while a previous definition already exists, so the definition is unused.
+5. HP1: "set_fact" is unnecessarily used when both the expression and all task conditions already took higher precedence.
+6. HP2: "include_vars" is unnecessarily used when it will be executed unconditionally.
+
+The followings are example of Ansible scripts.
+Q1: 
+---
+- name: set_facts | Setting Debian/Ubuntu Pre-Reqs
+  set_fact:
+    influxdb_pre_req_packages:
+      - git
+      - python-dev
+      - python-pip
+      - python-setuptools
+      - python-virtualenv
+      - python3-dev
+      - python3-pip
+      - python3-setuptools
+      - python3-venv
+      - sshpass
+      - virtualenv
+  when:
+    - ansible_os_family == "Debian"
+    - ansible_python_version is version('3', '<')
+
+- name: set_facts | Setting Debian/Ubuntu Pre-Reqs
+  set_fact:
+    influxdb_pre_req_packages:
+      - git
+      - python3-dev
+      - python3-pip
+      - python3-setuptools
+      - python3-venv
+      - sshpass
+      - virtualenv
+  when:
+    - ansible_os_family == "Debian"
+    - ansible_python_version is version('3', '>=')
+
+- name: set_facts | Setting RedHat Facts
+  set_fact:
+    influxdb_pre_req_packages:
+      - git
+      - python-devel
+      - python-dnf
+      - python-pip
+      - python-setuptools
+      - python-virtualenv
+      - sshpass
+  when:
+    - ansible_os_family == "RedHat"
+    - ansible_python_version is version('3', '<')
+
+- name: set_facts | Setting RedHat Facts
+  set_fact:
+    influxdb_pre_req_packages:
+      - git
+      - python3-devel
+      - python3-pip
+      - python3-setuptools
+      - python3-virtualenv
+      - sshpass
+  when:
+    - ansible_os_family == "RedHat"
+    - ansible_python_version is version('3', '>=')
+A1: This code contains a code smell of type UO1, because Potential unintended unconditional override of variable "inﬂuxdb_pre_req_packages@2".. Therefore, the code is defective.
+Q2: 
+---
+- name: set_facts | Setting Debian/Ubuntu Facts
+  ansible.builtin.set_fact:
+    influxdb_pre_req_packages:
+      - apt-transport-https
+  when: ansible_os_family == "Debian"
+A2: This code does not contain a code smell, because it is a fixed version of the above example. Therefore, the code is not defective.
+
+Q: 
+---
+- name: Collect PostgreSQL db_names
+  postgresql_query:
+    login_host: "{{ item.login_host | default('localhost') }}"
+    login_password: "{{ item.login_password | default(omit) }}"
+    login_user: "{{ item.login_user | default(postgresql_user) }}"
+    login_unix_socket: "{{ item.login_unix_socket | default(postgresql_unix_socket_directories[0]) }}"
+    port: "{{ item.port | default(omit) }}"
+    query: "SELECT datname FROM pg_database;"
+  register: postgresql_present_db_names
+  become: true
+  become_user: "{{ postgresql_user }}"
+
+- name: Ensure PostgreSQL databases are present.
+  postgresql_db:
+    name: "{{ item.name }}"
+    lc_collate: "{{ item.lc_collate | default('en_US.UTF-8') }}"
+    lc_ctype: "{{ item.lc_ctype | default('en_US.UTF-8') }}"
+    encoding: "{{ item.encoding | default('UTF-8') }}"
+    template: "{{ item.template | default('template0') }}"
+    login_host: "{{ item.login_host | default('localhost') }}"
+    login_password: "{{ item.login_password | default(omit) }}"
+    login_user: "{{ item.login_user | default(postgresql_user) }}"
+    login_unix_socket: "{{ item.login_unix_socket | default(postgresql_unix_socket_directories[0]) }}"
+    port: "{{ item.port | default(omit) }}"
+    owner: "{{ item.owner | default(postgresql_user) }}"
+    state: "{{ item.state | default('present') }}"
+  with_items: "{{ postgresql_databases }}"
+  become: true
+  become_user: "{{ postgresql_user }}"
+  # See: https://github.com/ansible/ansible/issues/16048#issuecomment-229012509
+  vars:
+    ansible_ssh_pipelining: true
+  when: "item.name not in (postgresql_present_db_names.query_result | map(attribute='datname') )"
+
+A:

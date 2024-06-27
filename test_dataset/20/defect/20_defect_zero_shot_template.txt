@@ -1,0 +1,23 @@
+Review the provided Ansible code for potential software defect(s). 
+After your review, assign the code a label from [Defective, None-defective].
+‘Defective’ implies that there is at least one software defect. ‘None-defective’ implies that there is no software defect.
+Return only the label.
+Code: 
+---
+
+- name: Install requirements (Debian)
+  apt: name={{item}}
+  with_items: [openvpn, udev, openssl]
+
+- name: Install dependencies (Debian)
+  apt: name={{item}}
+  when: openvpn_use_pam_users
+  with_items: [libpam-pwdfile, python-passlib]
+
+- name: Install LDAP dependencies (Debian)
+  apt: name=openvpn-auth-ldap
+  when: openvpn_use_ldap
+
+Label:
+
+

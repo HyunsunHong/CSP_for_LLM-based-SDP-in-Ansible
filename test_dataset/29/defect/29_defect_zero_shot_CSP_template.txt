@@ -1,0 +1,69 @@
+The following is six categories of code smells in Ansible script. You can safely assume that the script is defective if it contains a code smell.
+1. UR1: Due to an impure initialiser, the variable value may have changed.
+2. UR2: The upstream variable has been redefined, so the variable value may have changed.
+3. UO1: A new definition overrides a previous definition at a higher precedence without taking the previous definition into account.
+4. UO2: A variable definition is manifested while a previous definition already exists, so the definition is unused.
+5. HP1: "set_fact" is unnecessarily used when both the expression and all task conditions already took higher precedence.
+6. HP2: "include_vars" is unnecessarily used when it will be executed unconditionally.
+
+Refering above Ansible code smell theory, review the provided Ansible code for potential software defect(s).
+After your review, assign the code a label from [Defective, None-defective].
+‘Defective’ implies that there is at least one software defect. ‘None-defective’ implies that there is no software defect.
+Return only the label.
+Code: 
+---
+
+- name: set fact java_state to present
+  set_fact: java_state="present"
+
+- name: set fact java_state to latest
+  set_fact: java_state="latest"
+  when: update_java == true
+
+- name: RedHat - Ensure Java is installed
+  become: yes
+  yum: name={{ java }} state={{java_state}}
+  when: ansible_os_family == 'RedHat'
+
+- name: Get the installed java path
+  shell: "update-alternatives --display java | grep '^/' | awk '{print $1}' | grep 1.8.0 | head -1"
+  become: yes
+  register: java_full_path
+  failed_when: False
+  changed_when: False
+  check_mode: no
+  when: ansible_os_family == 'RedHat'
+
+- name: correct java version selected
+  alternatives:
+    name: java
+    path: "{{ java_full_path.stdout }}"
+    link: /usr/bin/java
+  when: ansible_os_family == 'RedHat' and java_full_path is defined
+
+- name: Refresh java repo
+  become: yes
+  apt: update_cache=yes
+  changed_when: false
+  when: ansible_os_family == 'Debian'
+
+- name: Debian - Ensure Java is installed
+  become: yes
+  apt: name={{ java }} state={{java_state}}
+  when: ansible_os_family == 'Debian'
+
+- name: register open_jdk version
+  shell: java -version 2>&1 | grep OpenJDK
+  register: open_jdk
+  ignore_errors: yes
+  changed_when: false
+  check_mode: no
+
+#https://github.com/docker-library/openjdk/issues/19 - ensures tests pass due to java 8 broken certs
+- name: refresh the java ca-certificates
+  become: yes
+  command: /var/lib/dpkg/info/ca-certificates-java.postinst configure
+  when: ansible_distribution == 'Ubuntu' and open_jdk.rc == 0
+  changed_when: false
+
+Label:

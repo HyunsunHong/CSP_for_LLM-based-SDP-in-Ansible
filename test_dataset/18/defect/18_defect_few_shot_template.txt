@@ -1,0 +1,193 @@
+Review the provided Ansible code for potential software defect(s) based on the given examples.
+After your review, assign the code a label from [Defective, None-defective].
+‘Defective’ implies that there is at least one software defect. ‘None-defective’ implies that there is no software defect.
+Return only the label.
+Code: 
+---
+- set_fact:
+    apt_packages: "{{ __apt_packages|list }}"
+  when: apt_packages|default(None) == None
+
+- set_fact:
+    distcc_start: "{{ __distcc_start|list }}"
+  when: distcc_start|default(None) == None
+
+- set_fact:
+    distcc_allowed_nets: "{{ __distcc_allowed_nets|list }}"
+  when: distcc_allowed_nets|default(None) == None
+
+- set_fact:
+    distcc_listener: "{{ __distcc_listener|list }}"
+  when: distcc_listener|default(None) == None
+
+- set_fact:
+    distcc_nice: "{{ __distcc_nice }}"
+  when: distcc_nice|default(None) == None
+
+- set_fact:
+    distcc_jobs: "{{ __distcc_jobs }}"
+  when: distcc_jobs|default(None) == None
+
+- set_fact:
+    distcc_zeroconf: "{{ __distcc_zeroconf }}"
+  when: distcc_zeroconf|default(None) == None
+
+- set_fact:
+    distcc_hosts: "{{ __distcc_hosts|list }}"
+  when: distcc_hosts|default(None) == None
+
+- set_fact:
+    ccache_dir: "{{ __ccache_dir }}"
+  when: ccache_dir|default(None) == None
+
+- debconf:
+    name: distcc
+    question: distcc/daemon
+    value: "{{ distcc_start }}"
+    vtype: boolean
+
+- debconf:
+    name: distcc
+    question: distcc/daemon-allow
+    value: "{{ distcc_allowed_nets|join(' ') }}"
+    vtype: string
+
+- debconf:
+    name: distcc
+    question: distcc/daemon-listen
+    value: "{{ distcc_listener|join(' ') }}"
+    vtype: string
+
+- debconf:
+    name: distcc
+    question: distcc/daemon-nice
+    value: "{{ distcc_nice }}"
+    vtype: string
+
+- debconf:
+    name: distcc
+    question: distcc/daemon-jobs
+    value: "{{ distcc_jobs }}"
+    vtype: string
+
+- debconf:
+    name: distcc
+    question: distcc/daemon-zeroconf
+    value: "{{ distcc_zeroconf }}"
+    vtype: boolean
+
+- include_role:
+    name: jm1.virtual_pkg
+  vars:
+     package_name: "jm1-distcc"
+     package_depends: "{{ apt_packages }}"
+
+- template:
+    src: "{{ distribution_codename }}/etc/distcc/hosts.j2"
+    dest: /etc/distcc/hosts
+  when: distcc_hosts is defined and distcc_hosts
+
+- template:
+    src: "{{ distribution_codename }}/etc/default/distcc.j2"
+    dest: /etc/default/distcc
+  when: ccache_dir is defined and ccache_dir
+
+- set_fact:
+    apt_packages: !!null
+    distcc_start: !!null
+    distcc_allowed_nets: !!null
+    distcc_listener: !!null
+    distcc_nice: !!null
+    distcc_jobs: !!null
+    distcc_zeroconf: !!null
+    distcc_hosts: !!null
+    ccache_dir: !!null
+Label: Defective
+Code: 
+---
+- debconf:
+    name: distcc
+    question: distcc/daemon
+    value: "{{ distcc_start }}"
+    vtype: boolean
+
+- debconf:
+    name: distcc
+    question: distcc/daemon-allow
+    value: "{{ distcc_allowed_nets|join(' ') }}"
+    vtype: string
+
+- debconf:
+    name: distcc
+    question: distcc/daemon-listen
+    value: "{{ distcc_listener|join(' ') }}"
+    vtype: string
+
+- debconf:
+    name: distcc
+    question: distcc/daemon-nice
+    value: "{{ distcc_nice }}"
+    vtype: string
+
+- debconf:
+    name: distcc
+    question: distcc/daemon-jobs
+    value: "{{ distcc_jobs }}"
+    vtype: string
+
+- debconf:
+    name: distcc
+    question: distcc/daemon-zeroconf
+    value: "{{ distcc_zeroconf }}"
+    vtype: boolean
+
+- name: Update apt cache
+  apt:
+    update_cache: yes
+    cache_valid_time: 86400 # 1 day
+
+- jm1.pkg.meta_pkg:
+    name: "jm1-distcc"
+    version: "1"
+    depends:
+    - ccache
+    - distcc
+    - distcc-pump
+
+- template:
+    src: "{{ distribution_id|join('-') }}/etc/distcc/hosts.j2"
+    dest: /etc/distcc/hosts
+  when: distcc_hosts is defined and distcc_hosts
+
+- template:
+    src: "{{ distribution_id|join('-') }}/etc/default/distcc.j2"
+    dest: /etc/default/distcc
+  when: ccache_dir is defined and ccache_dir
+Label: None-defective
+
+Code: 
+---
+# Variable configuration.
+- include_tasks: variables.yml
+
+# Setup/install tasks.
+- include_tasks: setup-RedHat.yml
+  when: ansible_os_family == 'RedHat'
+
+- include_tasks: setup-Debian.yml
+  when: ansible_os_family == 'Debian'
+
+- include_tasks: initialize.yml
+- include_tasks: configure.yml
+
+- name: Ensure PostgreSQL is started and enabled on boot.
+  service:
+    name: "{{ postgresql_daemon }}"
+    state: "{{ postgresql_service_state }}"
+    enabled: "{{ postgresql_service_enabled }}"
+
+# Configure PostgreSQL.
+- import_tasks: users.yml
+- import_tasks: databases.yml
+
+Label:

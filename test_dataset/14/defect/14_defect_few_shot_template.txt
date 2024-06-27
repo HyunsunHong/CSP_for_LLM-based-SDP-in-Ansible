@@ -1,0 +1,233 @@
+Review the provided Ansible code for potential software defect(s) based on the given examples.
+After your review, assign the code a label from [Defective, None-defective].
+‘Defective’ implies that there is at least one software defect. ‘None-defective’ implies that there is no software defect.
+Return only the label.
+Code: 
+---
+# tasks file for lynis
+
+- name: Create directories
+  file: name={{item}} state=directory owner=root group=root mode=0755
+  with_items:
+    - /etc/lynis
+
+- name: Import gpg keys
+  rpm_key: state=present key={{item}} validate_certs={{validate_certs|default('yes')}}
+  with_items:
+    - https://packages.cisofy.com/keys/cisofy-software-rpms-public.key
+  when: ansible_os_family == 'Redhat'
+
+- name: Yum repository
+  template: src="{{item.src}}" dest="{{item.dest}}" owner={{item.owner|default('root')}}  group="{{item.group|default('root')}}" mode="{{item.mode|default('0644')}}"
+  with_items:
+    - { src: "lynis.repo", dest: "/etc/yum.repos.d/lynis.repo" }
+  register: lynis_repo_rpm
+  when: ansible_os_family == 'Redhat'
+
+- name: Install Apt-keys
+  apt_key: keyserver="{{item.keyserver|default('keyserver.ubuntu.com')}}" id="{{item.id}}"
+  with_items:
+    - { id: "C80E383C3DE9F082E01391A0366C67DE91CA5D5F", comment: "Lynis" }
+  when: ansible_os_family == 'Debian'
+
+- name: Apt repository
+  template: src="{{item.src}}" dest="{{item.dest}}" owner={{item.owner|default('root')}}  group="{{item.group|default('root')}}" mode="{{item.mode|default('0644')}}"
+  with_items:
+    - { src: "lynis.list", dest: "/etc/apt/sources.list.d/lynis.list" }
+  when: ansible_os_family == 'Debian'
+  register: lynis_repo_apt
+
+- name: Reload apt-caches
+  apt:
+    update_cache: yes
+  when: ansible_os_family == 'Debian' and lynis_repo_apt|changed
+
+- name: Install lynis packages
+  package:
+    name: "{{item}}"
+    state: latest
+  with_items:
+    - lynis
+    - curl
+    - "{% if lynis_license_key %}lynis-plugins{%else%}[]{% endif %}"
+
+- name: Template configuration-files
+  template: src="{{item.src}}" dest="{{item.dest}}" owner="{{item.owner|default('root')}}" group="{{item.group|default('root')}}" mode="{{item.perm|default('0755')}}"
+  with_items:
+    - { src: "lynis-custom.prf.j2", dest: "/etc/lynis/custom.prf", mode: "0644" }
+
+- name: Find path for lynis binary (different on EL)
+  command: "which lynis"
+  ignore_errors: yes
+  check_mode: no
+  register: lynis_path
+
+- name: Set lynis_binary path
+  set_fact:
+    lynis_binary: "{{lynis_path.stdout}}"
+    cacheable: true
+  check_mode: yes
+
+- name: Setup cronjob for lynis
+  cron:
+      cron_file: lynis
+      user: root
+      hour: 3
+      minute: 10
+      name: "nightly Lynis run"
+      state: present
+      job: "{{lynis_binary}} audit system --upload"
+  ignore_errors: yes
+Label: Defective
+Code: 
+---
+# tasks file for lynis
+
+- name: Create directories
+  ansible.builtin.file:
+    name: "{{ item }}"
+    state: directory
+    owner: "root"
+    group: "root"
+    mode: "0755"
+  with_items:
+    - /etc/lynis
+
+- name: Import gpg keys
+  ansible.builtin.rpm_key:
+    state: present
+    key: "{{ item }}"
+    validate_certs: "{{ validate_certs | default('true') }}"
+  with_items:
+    - https://packages.cisofy.com/keys/cisofy-software-rpms-public.key
+  when: ansible_os_family == 'RedHat'
+
+- name: Yum repository
+  ansible.builtin.template:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    owner: "{{ item.owner | default('root') }}"
+    group: "{{ item.group | default('root') }}"
+    mode: "{{ item.mode | default('0644') }}"
+  with_items:
+    - { src: "lynis.repo", dest: "/etc/yum.repos.d/lynis.repo" }
+  register: lynis_repo_rpm
+  when:
+    - ansible_os_family == 'RedHat'
+
+- name: Install Apt-keys
+  ansible.builtin.apt_key:
+    keyserver: "{{ item.keyserver | default('keyserver.ubuntu.com') }}"
+    id: "{{ item.id }}"
+  with_items:
+    - { id: "013baa07180c50a7101097ef9de922f1c2fde6c4", comment: "Lynis" }
+  when:
+    - ansible_os_family == 'Debian'
+
+- name: Apt repository
+  ansible.builtin.template:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    owner: "{{ item.owner | default('root') }}"
+    group: "{{ item.group | default('root') }}"
+    mode: "{{ item.mode | default('0644') }}"
+  with_items:
+    - { src: "lynis.list", dest: "/etc/apt/sources.list.d/lynis.list" }
+  register: lynis_repo_apt
+  when:
+    - ansible_os_family == 'Debian'
+
+- name: Reload apt-caches
+  ansible.builtin.apt:
+    update_cache: true
+  when:
+    - ansible_os_family == 'Debian'
+    - lynis_repo_apt is changed
+
+- name: Install lynis packages
+  ansible.builtin.package:
+    name: "{{ item }}"
+    state: present
+  with_items:
+    - lynis
+    - "{% if ansible_os_family == 'Debian' %}apt-transport-https{% else %}[]{% endif %}"
+    - curl
+    - "{% if lynis_license_key is defined and lynis_license_key != '' %}lynis-plugins{% else %}[]{% endif %}"
+
+- name: Template configuration-files
+  ansible.builtin.template:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    owner: "{{ item.owner | default('root') }}"
+    group: "{{ item.group | default('root') }}"
+    mode: "{{ item.perm | default('0755') }}"
+  with_items:
+    - { src: "lynis-custom.prf.j2", dest: "/etc/lynis/custom.prf", mode: "0644" }
+
+- name: Find path for lynis binary (different on EL)
+  ansible.builtin.command: "which lynis"
+  check_mode: false
+  register: lynis_path
+  changed_when: false
+
+- name: Set lynis_binary path
+  ansible.builtin.set_fact:
+    lynis_binary: "{{ lynis_path.stdout }}"
+    cacheable: true
+  check_mode: true
+
+- name: Setup cronjob for lynis
+  ansible.builtin.cron:
+    cron_file: lynis
+    user: root
+    hour: "3"
+    minute: "10"
+    name: "nightly Lynis run"
+    state: present
+    job: "{{ lynis_binary }} audit system {% if lynis_license_key is defined %}--upload{% endif %} > /dev/null"
+
+- name: Generate hostid values
+  ansible.builtin.command:
+    creates: /etc/lynis/hostids
+    argv:
+      - "{{ lynis_binary }}"
+      - generate
+      - hostids
+      - --save
+  when:
+    - lynis_generate_hostids | bool
+  tags:
+    - lynishostids
+Label: None-defective
+
+Code: 
+---
+
+- set_fact: force_install=no
+
+- set_fact: force_install=yes
+  when: es_allow_downgrades
+
+- name: Debian - Add Elasticsearch repository key
+  apt_key: url="http://packages.elasticsearch.org/GPG-KEY-elasticsearch" state=present
+  when: es_use_repository
+
+- name: Debian - add elasticsearch repository
+  apt_repository: repo="deb http://packages.elastic.co/elasticsearch/{{ es_major_version }}/debian stable main" state=present
+  when: es_use_repository
+
+- name: Debian - Ensure elasticsearch is installed
+  apt: name=elasticsearch{% if es_version is defined and es_version != "" %}={{ es_version }}{% endif %} state=present force={{force_install}} cache_valid_time=86400
+  when: es_use_repository
+  register: elasticsearch_install_from_repo
+
+- name: Debian - Download elasticsearch from url
+  get_url: url={% if es_custom_package_url is defined %}{{ es_custom_package_url }}{% else %}{{ es_package_url }}-{{ es_version }}.deb{% endif %} dest=/tmp/elasticsearch-{{ es_version }}.deb validate_certs=no
+  when: not es_use_repository
+
+- name: Debian - Ensure elasticsearch is installed from downloaded package
+  apt: deb=/tmp/elasticsearch-{{ es_version }}.deb
+  when: not es_use_repository
+  register: elasticsearch_install_from_package
+
+Label:

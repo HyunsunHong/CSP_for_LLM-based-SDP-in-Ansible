@@ -1,0 +1,215 @@
+The following is six categories of code smells in Ansible script. You can safely assume that the script is defective if it contains a code smell.
+1. UR1: Due to an impure initialiser, the variable value may have changed.
+2. UR2: The upstream variable has been redefined, so the variable value may have changed.
+3. UO1: A new definition overrides a previous definition at a higher precedence without taking the previous definition into account.
+4. UO2: A variable definition is manifested while a previous definition already exists, so the definition is unused.
+5. HP1: "set_fact" is unnecessarily used when both the expression and all task conditions already took higher precedence.
+6. HP2: "include_vars" is unnecessarily used when it will be executed unconditionally.
+
+The followings are example of Ansible scripts.
+Q1: 
+---
+- name: set_fact arwp_plugin_is_installed as false
+  set_fact:
+    arwp_plugin_is_installed: false
+
+- name: check if plugin {{ item.slug }} is installed
+  become: yes
+  become_user: "{{ arwp_user_name }}"
+  command: wp plugin is-installed {{ item.slug }}
+  args:
+    chdir: "{{ arwp_fact_wordpress_path }}"
+  ignore_errors: yes
+  changed_when: false
+  register: is_installed
+
+- name: set_fact arwp_plugin_is_installed as true
+  set_fact:
+    arwp_plugin_is_installed: true
+  when: is_installed.rc == 0
+A1: This code contains a code smell of type UO1, because Potential unintended unconditional override of variable "arwp_plugin_is_installed@1".. Therefore, the code is defective.
+Q2: 
+---
+- name: set_fact arwp_fact_plugin_is_installed as false
+  set_fact:
+    arwp_fact_plugin_is_installed: false
+
+- name: check if plugin {{ item.slug }} is installed
+  become: yes
+  become_user: "{{ arwp_user_name }}"
+  command: wp plugin is-installed {{ item.slug }}
+  args:
+    chdir: "{{ arwp_fact_wordpress_path }}"
+  ignore_errors: yes
+  changed_when: false
+  register: arwp_result_plugin_is_installed
+
+- name: set_fact arwp_fact_plugin_is_installed as true
+  set_fact:
+    arwp_fact_plugin_is_installed: true
+  when: arwp_result_plugin_is_installed.rc == 0
+A2: This code does not contain a code smell, because it is a fixed version of the above example. Therefore, the code is not defective.
+
+Q: 
+---
+# tasks file for wdijkerman.zabbix
+
+- name: "Set short version name"
+  set_fact:
+      zabbix_short_version: "{{ zabbix_version | regex_replace('\\.', '') }}"
+  tags:
+    - always
+
+- name: "Include OS-specific variables"
+  include_vars: "{{ ansible_os_family }}.yml"
+  tags:
+    - zabbix-agent
+
+- name: "Install the correct repository"
+  include: "RedHat.yml"
+  when: ansible_os_family == "RedHat"
+  tags:
+    - zabbix-agent
+    - init
+    - config
+    - service
+
+- name: "Install the correct repository"
+  include: "Debian.yml"
+  when: ansible_os_family == "Debian"
+  tags:
+    - zabbix-agent
+    - init
+    - config
+    - service
+
+- name: "Install the correct repository"
+  include: "Suse.yml"
+  when: ansible_os_family == "Suse"
+  tags:
+    - zabbix-agent
+    - init
+    - config
+    - service
+
+- name: "Fail invalid specified agent_listeninterface"
+  fail:
+    msg: "The specified network interface does not exist"
+  when: "agent_listeninterface and (agent_listeninterface not in ansible_interfaces)"
+  tags:
+    - zabbix-agent
+    - config
+
+- name: "Get IP of agent_listeninterface when no agent_listenip specified"
+  set_fact:
+    agent_listenip: "{{ hostvars[inventory_hostname]['ansible_' + agent_listeninterface]['ipv4'].address | default('0.0.0.0') }}"
+    agent_ip: "{{ hostvars[inventory_hostname]['ansible_' + agent_listeninterface]['ipv4'].address | default('0.0.0.0') }}"
+  when: "agent_listeninterface and not agent_listenip"
+  tags:
+    - zabbix-agent
+    - config
+    - api
+
+- name: "Default agent_listenip to all when not specified"
+  set_fact:
+    agent_listenip: '0.0.0.0'
+    agent_ip: "{{ hostvars[inventory_hostname]['ansible_default_ipv4'].address }}"
+  when: "not agent_listenip"
+  tags:
+    - zabbix-agent
+    - config
+
+- name: "Fail invalid specified agent_listenip"
+  fail:
+    msg: "The agent_listenip does not exist"
+  when: "agent_listenip != '0.0.0.0' and agent_listenip not in ansible_all_ipv4_addresses"
+  tags:
+    - zabbix-agent
+    - config
+
+- name: "Allow zabbix_agent to start (SELinux)"
+  selinux_permissive:
+    name: zabbix_agent_t
+    permissive: true
+  when: zabbix_selinux
+
+- name: "Configure zabbix-agent"
+  template: src=zabbix_agentd.conf.j2
+            dest=/etc/zabbix/zabbix_agentd.conf
+            owner=root
+            group=root
+            mode=0644
+  notify: restart zabbix-agent
+  become: yes
+  tags:
+    - zabbix-agent
+    - config
+    - init
+
+- name: "Create include dir zabbix-agent"
+  file: path={{ agent_include }}
+        owner=root
+        group=root
+        state=directory
+  become: yes
+  tags:
+    - config
+    - include
+
+- name: "Make sure the zabbix-agent service is running"
+  service: name=zabbix-agent
+           state=started
+           enabled=yes
+  become: yes
+  tags:
+    - init
+    - service
+
+- name: "Create hostgroups"
+  local_action:
+    module: zabbix_group
+    server_url: "{{ zabbix_url }}"
+    login_user: "{{ zabbix_api_user }}"
+    login_password: "{{ zabbix_api_pass }}"
+    host_group: "{{ zabbix_host_groups }}"
+    state: "{{ zabbix_create_hostgroup }}"
+  when: zabbix_api_create_hostgroup
+  become: no
+  tags:
+    - api
+
+- name: "Create a new host or update an existing host's info"
+  local_action:
+    module: zabbix_host
+    server_url: "{{ zabbix_url }}"
+    login_user: "{{ zabbix_api_user }}"
+    login_password: "{{ zabbix_api_pass }}"
+    host_name: "{{ agent_hostname }}"
+    host_groups: "{{ zabbix_host_groups }}"
+    link_templates: "{{ zabbix_link_templates }}"
+    status: "{{ zabbix_host_status }}"
+    state: "{{ zabbix_create_host }}"
+    proxy: "{{ zabbix_proxy }}"
+    interfaces: "{{ agent_interfaces }}"
+  when: zabbix_api_create_hosts
+  become: no
+  tags:
+    - api
+
+- name: "Updating host configuration with macros"
+  local_action:
+    module: zabbix_hostmacro
+    server_url: "{{ zabbix_url }}"
+    login_user: "{{ zabbix_api_user }}"
+    login_password: "{{ zabbix_api_pass }}"
+    host_name: "{{ agent_hostname }}"
+    macro_name: "{{ item.macro_key }}"
+    macro_value: "{{ item.macro_value }}"
+  with_items: "{{ zabbix_macros | default([]) }}"
+  when: zabbix_macros is defined and
+        item.macro_key is defined
+  become: no
+  tags:
+    - api
+
+A:

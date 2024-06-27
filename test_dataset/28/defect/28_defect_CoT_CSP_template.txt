@@ -1,0 +1,111 @@
+The following is six categories of code smells in Ansible script. You can safely assume that the script is defective if it contains a code smell.
+1. UR1: Due to an impure initialiser, the variable value may have changed.
+2. UR2: The upstream variable has been redefined, so the variable value may have changed.
+3. UO1: A new definition overrides a previous definition at a higher precedence without taking the previous definition into account.
+4. UO2: A variable definition is manifested while a previous definition already exists, so the definition is unused.
+5. HP1: "set_fact" is unnecessarily used when both the expression and all task conditions already took higher precedence.
+6. HP2: "include_vars" is unnecessarily used when it will be executed unconditionally.
+
+The followings are example of Ansible scripts.
+Q1: 
+---
+- name: set_fact arwp_plugin_is_installed as false
+  set_fact:
+    arwp_plugin_is_installed: false
+
+- name: check if plugin {{ item.slug }} is installed
+  become: yes
+  become_user: "{{ arwp_user_name }}"
+  command: wp plugin is-installed {{ item.slug }}
+  args:
+    chdir: "{{ arwp_fact_wordpress_path }}"
+  ignore_errors: yes
+  changed_when: false
+  register: is_installed
+
+- name: set_fact arwp_plugin_is_installed as true
+  set_fact:
+    arwp_plugin_is_installed: true
+  when: is_installed.rc == 0
+A1: This code contains a code smell of type UO1, because Potential unintended unconditional override of variable "arwp_plugin_is_installed@1".. Therefore, the code is defective.
+Q2: 
+---
+- name: set_fact arwp_fact_plugin_is_installed as false
+  set_fact:
+    arwp_fact_plugin_is_installed: false
+
+- name: check if plugin {{ item.slug }} is installed
+  become: yes
+  become_user: "{{ arwp_user_name }}"
+  command: wp plugin is-installed {{ item.slug }}
+  args:
+    chdir: "{{ arwp_fact_wordpress_path }}"
+  ignore_errors: yes
+  changed_when: false
+  register: arwp_result_plugin_is_installed
+
+- name: set_fact arwp_fact_plugin_is_installed as true
+  set_fact:
+    arwp_fact_plugin_is_installed: true
+  when: arwp_result_plugin_is_installed.rc == 0
+A2: This code does not contain a code smell, because it is a fixed version of the above example. Therefore, the code is not defective.
+
+Q: 
+---
+#Security specific configuration done here
+
+#TODO: 1. Skip users with no password defined or error 2. Passwords | length > 6
+
+#-----------------------------Create Bootstrap User-----------------------------------
+### START BLOCK elasticsearch keystore ###
+- name: create the elasticsearch keystore
+  block:
+  - name: create the keystore if it doesn't exist yet
+    become: yes
+    command: >
+     {{es_home}}/bin/elasticsearch-keystore create
+    args:
+      creates: "{{ es_conf_dir }}/elasticsearch.keystore"
+    environment:
+      ES_PATH_CONF: "{{ es_conf_dir }}"
+
+  - name: Check if bootstrap password is set
+    become: yes
+    command: >
+     {{es_home}}/bin/elasticsearch-keystore list
+    register: list_keystore
+    changed_when: False
+    environment:
+      ES_PATH_CONF: "{{ es_conf_dir }}"
+    check_mode: no
+
+  - name: Create Bootstrap password for elastic user
+    become: yes
+    shell: echo "{{es_api_basic_auth_password}}" | {{es_home}}/bin/elasticsearch-keystore add -x 'bootstrap.password'
+    when:
+      - es_api_basic_auth_username is defined and list_keystore is defined and es_api_basic_auth_username == 'elastic' and 'bootstrap.password' not in list_keystore.stdout_lines
+    environment:
+      ES_PATH_CONF: "{{ es_conf_dir }}"
+    no_log: true
+### END BLOCK elasticsearch keystore ###
+
+#-----------------------------FILE BASED REALM----------------------------------------
+
+- include: elasticsearch-security-file.yml
+  when: (es_users is defined and es_users.file is defined) or (es_roles is defined and es_roles.file is defined)
+
+#-----------------------------ROLE MAPPING ----------------------------------------
+
+#Copy Roles files
+- name: Copy role_mapping.yml file for instance
+  become: yes
+  template: 
+    src: security/role_mapping.yml.j2
+    dest: "{{ es_conf_dir }}/role_mapping.yml"
+    owner: root
+    group: "{{ es_group }}"
+    mode: "0660"
+    force: yes
+  when: es_role_mapping is defined
+
+A:

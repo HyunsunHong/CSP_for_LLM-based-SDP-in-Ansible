@@ -1,0 +1,93 @@
+The following is six categories of code smells in Ansible script. You can safely assume that the script is defective if it contains a code smell.
+1. UR1: Due to an impure initialiser, the variable value may have changed.
+2. UR2: The upstream variable has been redefined, so the variable value may have changed.
+3. UO1: A new definition overrides a previous definition at a higher precedence without taking the previous definition into account.
+4. UO2: A variable definition is manifested while a previous definition already exists, so the definition is unused.
+5. HP1: "set_fact" is unnecessarily used when both the expression and all task conditions already took higher precedence.
+6. HP2: "include_vars" is unnecessarily used when it will be executed unconditionally.
+
+The followings are example of Ansible scripts.
+Q1: 
+---
+- name: set_fact arwp_plugin_is_installed as false
+  set_fact:
+    arwp_plugin_is_installed: false
+
+- name: check if plugin {{ item.slug }} is installed
+  become: yes
+  become_user: "{{ arwp_user_name }}"
+  command: wp plugin is-installed {{ item.slug }}
+  args:
+    chdir: "{{ arwp_fact_wordpress_path }}"
+  ignore_errors: yes
+  changed_when: false
+  register: is_installed
+
+- name: set_fact arwp_plugin_is_installed as true
+  set_fact:
+    arwp_plugin_is_installed: true
+  when: is_installed.rc == 0
+A1: This code contains a code smell of type UO1, because Potential unintended unconditional override of variable "arwp_plugin_is_installed@1".. Therefore, the code is defective.
+Q2: 
+---
+- name: set_fact arwp_fact_plugin_is_installed as false
+  set_fact:
+    arwp_fact_plugin_is_installed: false
+
+- name: check if plugin {{ item.slug }} is installed
+  become: yes
+  become_user: "{{ arwp_user_name }}"
+  command: wp plugin is-installed {{ item.slug }}
+  args:
+    chdir: "{{ arwp_fact_wordpress_path }}"
+  ignore_errors: yes
+  changed_when: false
+  register: arwp_result_plugin_is_installed
+
+- name: set_fact arwp_fact_plugin_is_installed as true
+  set_fact:
+    arwp_fact_plugin_is_installed: true
+  when: arwp_result_plugin_is_installed.rc == 0
+A2: This code does not contain a code smell, because it is a fixed version of the above example. Therefore, the code is not defective.
+
+Q: 
+---
+# Standards: 0.11
+
+# 1.1.1.1 - Ensure mounting of cramfs filesystems is disabled 
+
+- name: 1.1.1.1 - Check if CIS modprobe configuration file exists
+  stat:
+    path: "{{ cis_modprobe_conf_filename }}"
+  register: modprobe_1_1_1_1
+  tags:
+    - level-1
+    - section-1
+    - "1.1.1.1"
+    - scored
+  
+- name: 1.1.1.1 - Ensure mounting of cramfs filesystems is disabled 
+  copy:
+    dest: "{{ cis_modprobe_conf_filename }}"
+    content: "install cramfs /bin/true\n"
+  when: modprobe_1_1_1_1.stat.exists is not defined or not modprobe_1_1_1_1.stat.exists
+  tags:
+    - level-1
+    - section-1
+    - "1.1.1.1"
+    - scored
+
+- name: 1.1.1.1 - Ensure mounting of cramfs filesystems is disabled
+  lineinfile: 
+    dest: "{{ cis_modprobe_conf_filename }}"
+    regexp: "^install cramfs" 
+    line: "install cramfs /bin/true" 
+  when: modprobe_1_1_1_1.stat.exists is defined and modprobe_1_1_1_1.stat.exists
+  tags:
+    - level-1
+    - section-1
+    - "1.1.1.1"
+    - scored
+
+
+A:

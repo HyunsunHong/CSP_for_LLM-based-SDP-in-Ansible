@@ -1,0 +1,450 @@
+1 : start===================================================
+This code contains a code smell of type UR2, because The upstream variable "oracle_java_rpm_url" has been redefined, so the variable value may have changed. Therefore, the code is defective.
+end===================================================
+
+
+
+
+
+
+
+
+
+
+
+
+2 : start===================================================
+This code contains a code smell of type UO1, because Potential unintended unconditional override of variable "modprobe_1_1_1_1". Therefore, the code is defective.
+end===================================================
+
+
+
+
+
+
+
+
+
+
+
+
+3 : start===================================================
+This code does not contain a code smell. Therefore, the code is not defective.
+end===================================================
+
+
+
+
+
+
+
+
+
+
+
+
+4 : start===================================================
+This code contains a code smell of type UO2, because The variable cis_wheel_group_members was already set by task [5.5 - Ensure access to the su command is restricted] and will only be re-set. Therefore, the code is defective.
+end===================================================
+
+
+
+
+
+
+
+
+
+
+
+
+5 : start===================================================
+This code contains a code smell of type UR2, because Upstream variable cephx value has changed. Therefore, the code is defective.
+end===================================================
+
+
+
+
+
+
+
+
+
+
+
+
+6 : start===================================================
+This code contains a code smell of type UO1, because "a2dissite default" overrides "a2ensite default" at a higher precedence without taking the previous definition into account. Therefore, the code is defective.
+end===================================================
+
+
+
+
+
+
+
+
+
+
+
+
+7 : start===================================================
+This code contains a code smell of type HP2, because "include_vars" is unnecessarily used when it will be executed unconditionally. Therefore, the code is defective.
+end===================================================
+
+
+
+
+
+
+
+
+
+
+
+
+8 : start===================================================
+This code does not contain a code smell, because it is a well-written Ansible script. Therefore, the code is not defective.
+end===================================================
+
+
+
+
+
+
+
+
+
+
+
+
+9 : start===================================================
+This code contains a code smell of type UO2, because Potential unintended unused definitions of variable (list) "zabbix_macros". Therefore, the code is defective.
+end===================================================
+
+
+
+
+
+
+
+
+
+
+
+
+10 : start===================================================
+This code contains a code smell of type UO1, because The "Debian.yml" definition overrides the previous definition at a higher precedence without taking the previous definition into account. Therefore, the code is defective.
+end===================================================
+
+
+
+
+
+
+
+
+
+
+
+
+11 : start===================================================
+This code contains code smells of type UO1 and HP2. Therefore, the code is defective.
+end===================================================
+
+
+
+
+
+
+
+
+
+
+
+
+12 : start===================================================
+This code does not contain a code smell, because it is a fixed version of the above example. Therefore, the code is not defective.
+end===================================================
+
+
+
+
+
+
+
+
+
+
+
+
+13 : start===================================================
+This code contains code smells of type UO1 and UR2, so it is defective.
+end===================================================
+
+
+
+
+
+
+
+
+
+
+
+
+14 : start===================================================
+This code contains a code smell of type UO1, because the variable "force_install" is redefined without taking the previous definition into account. Therefore, the code is defective.
+end===================================================
+
+
+
+
+
+
+
+
+
+
+
+
+15 : start===================================================
+This code contains a code smell of type UR1, because the variable `es_script_dir` is redeﬁned with a different value. This may lead to inconsistent behavior. Therefore, the code is defective.
+end===================================================
+
+
+
+
+
+
+
+
+
+
+
+
+16 : start===================================================
+This code contains a code smell of type HP1, because "set_fact" is used when the expression already took higher precedence. Therefore, the code is defective.
+end===================================================
+
+
+
+
+
+
+
+
+
+
+
+
+17 : start===================================================
+This code contains a code smell of type UR1, because the variable kubernetes_init_stat is not used anymore. Therefore, the code is defective.
+end===================================================
+
+
+
+
+
+
+
+
+
+
+
+
+18 : start===================================================
+This code contains a code smell of type HP2, because "include_tasks" task at lines 6 and 7 are unnecessarily used when it will be executed unconditionally. Therefore, the code is defective.
+end===================================================
+
+
+
+
+
+
+
+
+
+
+
+
+19 : start===================================================
+This code contains a code smell of type UO2, because Potential override of variable "postgresql_databases@2" without usage.. Therefore, the code is defective.
+end===================================================
+
+
+
+
+
+
+
+
+
+
+
+
+20 : start===================================================
+This code contains a code smell of type UR1, because The variable "openvpn_use_pam_users" may have been changed in a previous task. Therefore, the code is defective.
+end===================================================
+
+
+
+
+
+
+
+
+
+
+
+
+21 : start===================================================
+This code contains a code smell of type UO1, because The openvpn_easyrsa_check variable is defined first for the stat task and then again for the fail task. Therefore, the code is defective.
+end===================================================
+
+
+
+
+
+
+
+
+
+
+
+
+22 : start===================================================
+This code contains a code smell of type HP1, because "set_fact" is unnecessarily used when both the expression and all task conditions already took higher precedence. Therefore, the code is defective.
+end===================================================
+
+
+
+
+
+
+
+
+
+
+
+
+23 : start===================================================
+This code contains a code smell of type UR1, because of Potential change of "openssl_cnf_path@2" from undefined to "None".. Therefore, the code is defective.
+end===================================================
+
+
+
+
+
+
+
+
+
+
+
+
+24 : start===================================================
+This code contains a code smell of type UR1, because Potential undefined variable used upstream: "zabbix_api_create_hosts". Therefore, the code is defective.
+end===================================================
+
+
+
+
+
+
+
+
+
+
+
+
+25 : start===================================================
+This code contains a code smell of type UO2, because Variable "zabbix_agent_policycoreutils_installed@10" is unused because its definition is shadowed by the following one at line 14. Therefore, the code is defective.
+end===================================================
+
+
+
+
+
+
+
+
+
+
+
+
+26 : start===================================================
+This code contains a code smell of type UO1, because Potential unintended unconditional override of variable "zabbix_win_exe_path@4".. Therefore, the code is defective.
+end===================================================
+
+
+
+
+
+
+
+
+
+
+
+
+27 : start===================================================
+This code contains a code smell of type UR1, because the variable es_same_keystore value has changed due to the impure initialiser. Therefore, the code is defective.
+end===================================================
+
+
+
+
+
+
+
+
+
+
+
+
+28 : start===================================================
+This code contains a code smell of type HP2, because "include_vars" is unnecessarily used when it will be executed unconditionally.. Therefore, the code is defective.
+end===================================================
+
+
+
+
+
+
+
+
+
+
+
+
+29 : start===================================================
+This code contains a code smell of type UR1, because Impure initialiser java_state could have been changed with the task "set fact java_state to latest". Therefore, the code is defective.
+end===================================================
+
+
+
+
+
+
+
+
+
+
+
+
+30 : start===================================================
+This code contains a code smell of type HP2, because Unnecessary use of include_vars for variable "list_command@3". Therefore, the code is defective.
+end===================================================
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,290 @@
+The following is six categories of code smells in Ansible script. You can safely assume that the script is defective if it contains a code smell.
+1. UR1: Due to an impure initialiser, the variable value may have changed.
+2. UR2: The upstream variable has been redefined, so the variable value may have changed.
+3. UO1: A new definition overrides a previous definition at a higher precedence without taking the previous definition into account.
+4. UO2: A variable definition is manifested while a previous definition already exists, so the definition is unused.
+5. HP1: "set_fact" is unnecessarily used when both the expression and all task conditions already took higher precedence.
+6. HP2: "include_vars" is unnecessarily used when it will be executed unconditionally.
+
+The followings are example of Ansible scripts.
+Q1: 
+- name: "Set default '_mvn_cmdline_args'."
+  set_fact:
+    _mvn_cmdline_args: "{{ conga_aem_packages_maven_opts }}"
+
+- name: "Set vault force define for '{{ item.path | basename }}' to {{ item.force }} in _mvn_cmdline_args"
+  set_fact:
+    _mvn_cmdline_args: "{{ _mvn_cmdline_args }} -Dvault.force={{ item.force }}"
+  when: item.force is defined
+
+- name: "Set vault httpSocketTimeoutSec define for '{{ item.path | basename }}' to {{ item.httpSocketTimeoutSec }}"
+  set_fact:
+    _mvn_cmdline_args: "{{ _mvn_cmdline_args }} -Dvault.httpSocketTimeoutSec={{ item.httpSocketTimeoutSec }}"
+  when: item.httpSocketTimeoutSec is defined
+
+- name: Add custom Maven settings to _mvn_cmdline_args.
+  set_fact:
+    _mvn_cmdline_args: "{{ _mvn_cmdline_args }} --settings={{ conga_aem_packages_maven_settings }}"
+  when: conga_aem_packages_maven_settings is defined
+
+- name: Add command line arguments for logging to file.
+  set_fact:
+    _mvn_cmdline_args: "{{ _mvn_cmdline_args }} | tee -a {{ conga_aem_packages_maven_logfile }}"
+  when: conga_aem_packages_maven_logging
+
+- name: "Set environment specific wcmio-content-package-maven-plugin version"
+  set_fact:
+    _content_package_maven_plugin_version:
+      "{{ conga_version_info['io.wcm.maven.plugins:wcmio-content-package-maven-plugin']
+      | default(conga_aem_packages_wcmio_content_package_maven_plugin_version) }}"
+  changed_when:
+    _content_package_maven_plugin_version != conga_aem_packages_wcmio_content_package_maven_plugin_version
+
+- name: "Use interactive mode for '{{ item.path | basename }}'"
+  pause:
+    prompt: "Continue with deploying {{ item.path | basename }}?"
+  when:
+    - conga_aem_packages_interactive_packages is defined
+    - (item.path | basename) in conga_aem_packages_interactive_packages
+
+- name: "Deploy AEM package: {{ item.path | basename }}"
+  shell: >
+    {{ conga_aem_packages_maven_cmd }}
+    io.wcm.maven.plugins:wcmio-content-package-maven-plugin:{{ _content_package_maven_plugin_version }}:install
+    -Dvault.serviceURL={{ conga_aem_packages_service_url }}
+    -Dvault.file={{ item.path }}
+    -Dvault.userId={{ conga_aem_packages_user }}
+    -Dvault.password={{ conga_aem_packages_password | quote }}
+    -Dvault.delayAfterInstallSec={{ item.delayAfterInstallSec | default('0') }}
+    -Dvault.recursive={{ item.recursive | default('true') }}
+    {{ _mvn_cmdline_args }}
+  args:
+    chdir: "{{ conga_config_path }}"
+  delegate_to: "{{ conga_aem_packages_maven_host }}"
+  become: false
+  register: _mvn_result
+  changed_when:
+    - _mvn_result.stdout is defined
+    - conga_aem_packages_wcmio_content_package_maven_plugin_changed_output in _mvn_result.stdout
+  tags:
+    - skip_ansible_lint
+
+- name: Fail if Maven stdout is undefined or Maven build has failed.
+  fail:
+    msg: "{{ _mvn_result }}"
+  when: _mvn_result.stdout is not defined or _mvn_result.stdout.find('BUILD FAILURE') != -1
+
+
+  # execute tasks required on restart
+- block:
+
+    # Restart if the package has actually been installed and it has been declared as necessary and
+    # allow overriding the requiresRestart property from the package metadata in the CONGA configuration
+  - name: Restart AEM if required by package metadata.
+    include_role:
+      name: wcm_io_devops.aem_service
+    vars:
+      aem_service_state: restarted
+
+  - name: "Set 'conga_aem_packages_aem_restarted' to true when changed."
+    set_fact:
+      conga_aem_packages_aem_restarted: true
+
+  when: (conga_aem_packages_wcmio_content_package_maven_plugin_changed_output in _mvn_result.stdout) and
+        (item.requiresRestart |
+         default(item.aemContentPackageProperties.requiresRestart is defined and
+         item.aemContentPackageProperties.requiresRestart | bool))
+A1: This code contains a code smell of type HP1, because Unnecessary use of set_fact for variable "_content_package_maven_plugin_version@0". Therefore, the code is defective.
+Q2: 
+---
+- name: "Set default '_mvn_cmdline_args'."
+  set_fact:
+    _mvn_cmdline_args: "{{ conga_aem_packages_maven_opts }}"
+
+- name: "Set vault force define for '{{ pkg.path | basename }}' to {{ pkg.force }} in _mvn_cmdline_args"
+  set_fact:
+    _mvn_cmdline_args: "{{ _mvn_cmdline_args }} -Dvault.force={{ pkg.force }}"
+  when: pkg.force is defined
+
+- name: "Set vault httpSocketTimeoutSec define for '{{ pkg.path | basename }}' to {{ pkg.httpSocketTimeoutSec }}"
+  set_fact:
+    _mvn_cmdline_args: "{{ _mvn_cmdline_args }} -Dvault.httpSocketTimeoutSec={{ pkg.httpSocketTimeoutSec }}"
+  when: pkg.httpSocketTimeoutSec is defined
+
+- name: Add custom Maven settings to _mvn_cmdline_args.
+  set_fact:
+    _mvn_cmdline_args: "{{ _mvn_cmdline_args }} --settings={{ conga_aem_packages_maven_settings }}"
+  when: conga_aem_packages_maven_settings is defined
+
+- name: Add command line arguments for logging to file.
+  set_fact:
+    _mvn_cmdline_args: "{{ _mvn_cmdline_args }} | tee -a {{ conga_aem_packages_maven_logfile }}"
+  when: conga_aem_packages_maven_logging
+
+- name: "Set environment specific wcmio-content-package-maven-plugin version"
+  set_fact:
+    _content_package_maven_plugin_version:
+      "{{ conga_version_info['io.wcm.maven.plugins:wcmio-content-package-maven-plugin']
+      | default(conga_aem_packages_wcmio_content_package_maven_plugin_version) }}"
+  changed_when:
+    _content_package_maven_plugin_version != conga_aem_packages_wcmio_content_package_maven_plugin_version
+
+- name: "Use interactive mode for '{{ pkg.path | basename }}'"
+  pause:
+    prompt: "Continue with deploying {{ pkg.path | basename }}?"
+  when:
+    - conga_aem_packages_interactive_packages is defined
+    - (pkg.path | basename) in conga_aem_packages_interactive_packages
+
+- name: "Deploy AEM package: {{ pkg.path | basename }}"
+  shell: >
+    {{ conga_aem_packages_maven_cmd }}
+    io.wcm.maven.plugins:wcmio-content-package-maven-plugin:{{ _content_package_maven_plugin_version }}:install
+    -Dvault.serviceURL={{ conga_aem_packages_service_url }}
+    -Dvault.file={{ pkg.path }}
+    -Dvault.userId={{ conga_aem_packages_user }}
+    -Dvault.password={{ conga_aem_packages_password | quote }}
+    -Dvault.delayAfterInstallSec={{ pkg.delayAfterInstallSec | default('0') }}
+    -Dvault.recursive={{ pkg.recursive | default('true') }}
+    {{ _mvn_cmdline_args }}
+  args:
+    chdir: "{{ conga_config_path }}"
+  delegate_to: "{{ conga_aem_packages_maven_host }}"
+  become: false
+  register: _mvn_result
+  changed_when:
+    - _mvn_result.stdout is defined
+    - conga_aem_packages_wcmio_content_package_maven_plugin_changed_output in _mvn_result.stdout
+  tags:
+    - skip_ansible_lint
+
+- name: Fail if Maven stdout is undefined or Maven build has failed.
+  fail:
+    msg: "{{ _mvn_result }}"
+  when: _mvn_result.stdout is not defined or _mvn_result.stdout.find('BUILD FAILURE') != -1
+
+
+  # execute tasks required on restart
+- block:
+
+    # Restart if the package has actually been installed and it has been declared as necessary and
+    # allow overriding the requiresRestart property from the package metadata in the CONGA configuration
+    - name: Restart AEM if required by package metadata.
+      include_role:
+        name: wcm_io_devops.aem_service
+      vars:
+        aem_service_state: restarted
+        aem_service_port: "{{ conga_aem_packages_port }}"
+        aem_service_name: "{{ conga_aem_packages_aem_service_name }}"
+
+    - name: "Set 'conga_aem_packages_aem_restarted' to true when changed."
+      set_fact:
+        conga_aem_packages_aem_restarted: true
+
+  when: (conga_aem_packages_wcmio_content_package_maven_plugin_changed_output in _mvn_result.stdout) and
+        (pkg.requiresRestart |
+         default(pkg.aemContentPackageProperties.requiresRestart is defined and
+         pkg.aemContentPackageProperties.requiresRestart | bool))
+A2: This code does not contain a code smell, because it is a fixed version of the above example. Therefore, the code is not defective.
+
+Q: 
+---
+# file: oracle-java/tasks/redhat/main.yml
+#
+# Task file to install Oracle Java Development Kit in a system with a Redhat based Linux distribution.
+#
+
+- name: get latest JDK download page
+  uri:
+    url: http://www.oracle.com/technetwork/java/javase/downloads/index.html
+    return_content: yes
+  register: result
+
+- name: determine latest java download page and version
+  set_fact: latest_java_page_and_version="{{ (result.content.replace('\n','')|regex_replace('.*(/technetwork/java/javase/downloads/jdk(\d+)-downloads.*?.html).*', 'http://www.oracle.com/\1\n\2')).split('\n') }}"
+
+- name: define download page URL based on latest version
+  set_fact: download_page_url="{{ latest_java_page_and_version[0] }}"
+  when: latest_java_page_and_version[1] | version_compare(oracle_java_version,'=')
+
+- block:
+
+  - name: get lastest JDK rpm url
+    uri: url="{{ result.content.replace('\n','')|regex_replace('.*(/technetwork/java/javase/archive-.*?.html).*','http://www.oracle.com/\1') }}"
+         return_content=yes
+    register: result
+
+  - name: define download page URL for "{{ oracle_java_version }}"
+    set_fact: download_page_url="{{ result.content|regex_search('href=\"[^\"]+\">Java SE\s+' + (oracle_java_version|string) + '\s?<')|regex_replace('.*href=\"([^\"]+)\".*','http://www.oracle.com/\1') }}"
+
+  when: latest_java_page_and_version[1] | version_compare(oracle_java_version,'!=') and oracle_java_version
+
+- name: show download page URL
+  debug: msg="{{ download_page_url }}"
+
+- name: get lastest JDK rpm url
+  uri: url="{{ download_page_url }}"
+       return_content=yes
+  register: result
+
+- name: set oracle_java_rpm_url
+  set_fact: oracle_java_rpm_url="{{ result.content|regex_search('https?://download.oracle.com/.*?/jdk-\w+-linux-' + oracle_java_ansible_arch_mappings[ansible_architecture] + '.rpm') }}"
+
+- name: set some variables
+  set_fact: oracle_java_rpm_filename="{{ oracle_java_rpm_url | basename }}"
+            oracle_java_version="{{ oracle_java_rpm_url | basename|regex_replace('jdk-(\d+)u(\d+)-linux.*','\1') }}"
+            oracle_java_version_update="{{ oracle_java_rpm_url | basename|regex_replace('jdk-(\d+)u(\d+)-linux.*','\2') }}"
+
+- debug: msg="Downloading java {{ oracle_java_version }}u{{ oracle_java_version_update }} to {{ oracle_java_rpm_filename }} from {{ oracle_java_rpm_url }}"
+
+- name: download Java RPM
+  get_url:
+    headers='Cookie:gpw_e24=http%3A%2F%2Fwww.oracle.com%2F; oraclelicense=accept-securebackup-cookie'    dest="{{ oracle_java_dir_source }}/{{ oracle_java_rpm_filename }}"
+    url="{{ oracle_java_rpm_url }}"
+    validate_certs="{{ oracle_java_rpm_validate_certs }}"
+    timeout={{ oracle_java_download_timeout }}
+  register: oracle_java_task_rpm_download
+  until: oracle_java_task_rpm_download|succeeded 
+  become: yes
+  tags: [ installation ]
+
+- name: install RPM
+  action: "{{ ansible_pkg_mgr }} name={{ oracle_java_dir_source }}/{{ oracle_java_rpm_filename }} state=present"
+  when: not oracle_java_task_rpm_download|skipped
+  become: yes
+  tags: [ installation ]
+
+- name: set Java version as default
+  alternatives:
+    name="{{ item.exe }}"
+    link="/usr/bin/{{ item.exe }}"
+    path="{{ item.path }}/{{ item.exe }}"
+  with_items:
+    - { path: "{{ oracle_java_home }}/jre/bin", exe: 'java' }
+    - { path: "{{ oracle_java_home }}/jre/bin", exe: 'keytool' }
+    - { path: "{{ oracle_java_home }}/bin", exe: 'javac' }
+    - { path: "{{ oracle_java_home }}/bin", exe: 'javadoc' }
+  become: yes
+  when: (
+          oracle_java_set_as_default and
+          oracle_java_task_rpm_download is defined and
+          oracle_java_task_rpm_download|changed
+        ) or (
+          oracle_java_set_as_default and
+          oracle_java_installed is defined and
+          oracle_java_installed and
+          oracle_java_version_installed is defined and
+          oracle_java_version_installed != oracle_java_version_string)
+  register: oracle_java_task_set_default
+
+- name: in case there were changes, check host environment again
+  include: ../check_environment.yml
+  when: (
+          oracle_java_task_rpm_download is defined and
+          not oracle_java_task_rpm_download|skipped
+        ) or (
+          oracle_java_task_set_default is defined and
+          oracle_java_task_set_default|changed
+        )
+
+A:

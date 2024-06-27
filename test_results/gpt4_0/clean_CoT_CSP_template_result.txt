@@ -1,0 +1,450 @@
+1 : start===================================================
+This Ansible script does not contain any of the six categories of code smells described above. The defining of variables and conditions seem consistent and no variable seems to be redefined or overridden unsafely. Therefore, the code is not defective.
+end===================================================
+
+
+
+
+
+
+
+
+
+
+
+
+2 : start===================================================
+This code doesn't seem to contain a code smell according to the six categories you described earlier. It uses conditional checks to determine when certain tasks should be executed, plus the `modprobe_1_1_1_1` variable is not redefined without taking account the previous definition. Therefore, it seems to be working as intended and is not defective.
+end===================================================
+
+
+
+
+
+
+
+
+
+
+
+
+3 : start===================================================
+This code does not seem to have any of the mentioned code smells. Each task seems to be independent, and there are no complex variable assignments that could override a value unintentionally. Therefore, the code appears to be correct. Bear in mind, this analysis is based on the six categories of code smells provided. There could be other potential issues or improvements not covered by these categories.
+end===================================================
+
+
+
+
+
+
+
+
+
+
+
+
+4 : start===================================================
+This code does not seem to contain any of the specific Ansible script code smells you have mentioned (UR1, UR2, UO1, UO2, HP1, HP2). It's mainly using the 'lineinfile' module to enforce the correct configuration for access to the 'su' command, and it does not appear to reassign or misuse variables in a way that would mark it as defective according to the specified code smells. Therefore, the code is not defective.
+end===================================================
+
+
+
+
+
+
+
+
+
+
+
+
+5 : start===================================================
+This Ansible script does not seem to contain a code smell based on the six categories provided. Each variable and task appears to be defined appropriately without evidence of unnecessary overriding or redefining. Therefore, this code is likely not defective. Please note that this analysis is based solely on the provided categories of code smells and does not determine the functional correctness or the appropriate use of the tasks and variables in the context of the entire program.
+end===================================================
+
+
+
+
+
+
+
+
+
+
+
+
+6 : start===================================================
+This code contains a code smell of type UR2. The variable "ansible_fqdn" is defined from a host fact, but it is redefined later, so the variable value may have changed. Therefore, the script is defective.
+end===================================================
+
+
+
+
+
+
+
+
+
+
+
+
+7 : start===================================================
+This code contains a code smell of type UO1, because it potentially unintentionally overrides the variable "rgwstatus@54". Therefore, the code is defective.
+end===================================================
+
+
+
+
+
+
+
+
+
+
+
+
+8 : start===================================================
+This code does not appear to have any of the code smells listed. Therefore, we can't confirm it as defective based on the provided categories. It's also important to note that while the absence of a code smell doesn't necessarily guarantee perfect code, it does suggest that it may be free from the specific types of flaws described in the code smells.
+end===================================================
+
+
+
+
+
+
+
+
+
+
+
+
+9 : start===================================================
+This code does not contain a code smell according to the categories of the code smells mentioned. Therefore, the code is not defective.
+end===================================================
+
+
+
+
+
+
+
+
+
+
+
+
+10 : start===================================================
+This code contains code smells under the category UR1, as the variables "agent_listenip" and "agent_ip" values may have changed due to impure initialisers. Therefore, the code is defective.
+end===================================================
+
+
+
+
+
+
+
+
+
+
+
+
+11 : start===================================================
+This code does not contain a code smell from the listed categories. All variables are defined and used correctly and there are no inappropriate "set_fact" or "include_vars" usages. Therefore, the code is not defective.
+end===================================================
+
+
+
+
+
+
+
+
+
+
+
+
+12 : start===================================================
+This code contains a code smell of type UO1 because of the potential unintended unconditional override of variables "ansible_distribution_release", "ansible_os_family", and "zabbix_agent_ip". Therefore, the code is defective.
+end===================================================
+
+
+
+
+
+
+
+
+
+
+
+
+13 : start===================================================
+This code contains a code smell of type UR2. The variable 'es_script_dir' is redefined here after its initial definition. Hence, this script is also defective.
+end===================================================
+
+
+
+
+
+
+
+
+
+
+
+
+14 : start===================================================
+This code contains a code smell of type UO1. The variable "force_install" is being redefined without taking into consideration its previous value, potentialy altering the behavior of the later tasks. Therefore, the code is defective.
+end===================================================
+
+
+
+
+
+
+
+
+
+
+
+
+15 : start===================================================
+This code contains a code smell of type UO1. The variable "es_script_dir" is being redefined without considering the previous definition. Therefore, the code is defective.
+end===================================================
+
+
+
+
+
+
+
+
+
+
+
+
+16 : start===================================================
+This code contains a code smell of type UO1. The variable "plugin_installed" is registered twice which potentially overrides previous definitions without taking into account. Thus, the code is considered defective.
+end===================================================
+
+
+
+
+
+
+
+
+
+
+
+
+17 : start===================================================
+This code does not contain any of the provided code smells. Therefore, we can't definitively say that the code is defective based on the provided information. However, it's important to note that absence of these particular code smells does not guarantee that the script is entirely free of any issues, it just doesn't have the specific issues categorised under UR1, UR2, UO1, UO2, HP1, and HP2.
+end===================================================
+
+
+
+
+
+
+
+
+
+
+
+
+18 : start===================================================
+This code does not contain a code smell, because it properly includes different tasks based on the operating system and manages the PostgreSQL service. Therefore, the code is not defective.
+end===================================================
+
+
+
+
+
+
+
+
+
+
+
+
+19 : start===================================================
+This code does not contain a code smell and appears to be correctly addressing the collection of PostgreSQL DB names and their presence in accordance with suitable defaults. Therefore, the code is not defective.
+end===================================================
+
+
+
+
+
+
+
+
+
+
+
+
+20 : start===================================================
+This code contains a code smell of type UO1. The variable openvpn_use_pam_users and openvpn_use_ldap are used as conditions for the execution of tasks, but they are not defined in the script. Their definition might be at a higher level (for example, inventory or playbook), but they do not take the previous definition into account. Therefore, the code is defective.
+end===================================================
+
+
+
+
+
+
+
+
+
+
+
+
+21 : start===================================================
+This code does not appear to contain a code smell as per Ansible standards. All conditional and function tasks seem to be valid and there's no trace of unneeded variable declarations or code duplications. Therefore, the code is not defective.
+end===================================================
+
+
+
+
+
+
+
+
+
+
+
+
+22 : start===================================================
+This code does not appear to contain any of the code smell types that you've provided. Therefore, they are not considered defective. However, for a more comprehensive analysis, it would be important to consider the overall context of how these tasks are integrated in the playbook and to check for any dependencies or issues not covered in the provided categories.
+end===================================================
+
+
+
+
+
+
+
+
+
+
+
+
+23 : start===================================================
+This code does not contain a code smell. There is no redefinition of a variable that can cause an override or any unnecessary usage of "set_fact" and "include_vars". Therefore, the code is not defective.
+end===================================================
+
+
+
+
+
+
+
+
+
+
+
+
+24 : start===================================================
+This code contains a code smell of type UO1 because "zabbix_agent_tlspsk_secret" is being overridden without taking the previous value into account. This happens in the "AutoPSK | Use existing TLS PSK secret" and "AutoPSK | Generate new TLS PSK secret" tasks. Similarly, "zabbix_agent_tlspskidentity" is also being overridden in the "AutoPSK | Use existing TLS PSK identity" & "AutoPSK | Generate new TLS PSK identity" tasks. Therefore, the code is defective.
+end===================================================
+
+
+
+
+
+
+
+
+
+
+
+
+25 : start===================================================
+This script contains a code smell of type UO1, because Potential unintended unconditional override of variable "zabbix_agent_distribution_major_version". Thus, it can be considered as defective.
+end===================================================
+
+
+
+
+
+
+
+
+
+
+
+
+26 : start===================================================
+This code contains two code smells. The first one is of type UO1 because the variable "windows_arch" has a higher precedence at an early stage, but it is overridden unconditionally later. The second one is of type UO1 as well because the variable "zabbix_win_exe_path" is also defined twice in the script, the first definition is overridden without considering the earlier statement. Therefore, the code is defective.
+end===================================================
+
+
+
+
+
+
+
+
+
+
+
+
+27 : start===================================================
+This code contains a code smell of type HP1. The "set_fact" for "es_same_keystore@0" and "es_same_keystore@1" are unnecessarily used when both the expression and all task conditions already took higher precedence. Therefore, the code is defective.
+end===================================================
+
+
+
+
+
+
+
+
+
+
+
+
+28 : start===================================================
+This code does not contain any obvious code smells based on the six categories provided. Therefore, the code is not defective. However, it might have other inefficiencies or issues which are not covered by the provided code smell categories. Future inspections and tests are recommended to ensure its functionality and efficiency.
+end===================================================
+
+
+
+
+
+
+
+
+
+
+
+
+29 : start===================================================
+This script contains code smell of type UR2 and UO1. The variable "java_state" is redefined without considering its previous value. Initially, it is defined with the value "present" and then it may be overridden with the value "latest" when the condition "when: update_java == true" is satisfied. This could lead to unexpected behavior if the variable "update_java" is set to true unexpectedly, causing the java version to unexpectedly update to the latest version. Therefore, the script can be considered defective.
+end===================================================
+
+
+
+
+
+
+
+
+
+
+
+
+30 : start===================================================
+This code contains a code smell of type HP1. The set_fact command is used multiple times in the code (like setting "es_plugins_reinstall" fact) when the expression and all task conditions already took higher precedence. Therefore, the script could be considered defective.
+end===================================================
+
+
+
+
+
+
+
+
+
+
+
+

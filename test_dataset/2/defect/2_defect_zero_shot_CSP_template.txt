@@ -1,0 +1,53 @@
+The following is six categories of code smells in Ansible script. You can safely assume that the script is defective if it contains a code smell.
+1. UR1: Due to an impure initialiser, the variable value may have changed.
+2. UR2: The upstream variable has been redefined, so the variable value may have changed.
+3. UO1: A new definition overrides a previous definition at a higher precedence without taking the previous definition into account.
+4. UO2: A variable definition is manifested while a previous definition already exists, so the definition is unused.
+5. HP1: "set_fact" is unnecessarily used when both the expression and all task conditions already took higher precedence.
+6. HP2: "include_vars" is unnecessarily used when it will be executed unconditionally.
+
+Refering above Ansible code smell theory, review the provided Ansible code for potential software defect(s).
+After your review, assign the code a label from [Defective, None-defective].
+‘Defective’ implies that there is at least one software defect. ‘None-defective’ implies that there is no software defect.
+Return only the label.
+Code: 
+---
+# Standards: 0.11
+
+# 1.1.1.1 - Ensure mounting of cramfs filesystems is disabled 
+
+- name: 1.1.1.1 - Check if CIS modprobe configuration file exists
+  stat:
+    path: "{{ cis_modprobe_conf_filename }}"
+  register: modprobe_1_1_1_1
+  tags:
+    - level-1
+    - section-1
+    - "1.1.1.1"
+    - scored
+  
+- name: 1.1.1.1 - Ensure mounting of cramfs filesystems is disabled 
+  copy:
+    dest: "{{ cis_modprobe_conf_filename }}"
+    content: "install cramfs /bin/true\n"
+  when: modprobe_1_1_1_1.stat.exists is not defined or not modprobe_1_1_1_1.stat.exists
+  tags:
+    - level-1
+    - section-1
+    - "1.1.1.1"
+    - scored
+
+- name: 1.1.1.1 - Ensure mounting of cramfs filesystems is disabled
+  lineinfile: 
+    dest: "{{ cis_modprobe_conf_filename }}"
+    regexp: "^install cramfs" 
+    line: "install cramfs /bin/true" 
+  when: modprobe_1_1_1_1.stat.exists is defined and modprobe_1_1_1_1.stat.exists
+  tags:
+    - level-1
+    - section-1
+    - "1.1.1.1"
+    - scored
+
+
+Label:

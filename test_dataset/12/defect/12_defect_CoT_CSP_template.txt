@@ -1,0 +1,362 @@
+The following is six categories of code smells in Ansible script. You can safely assume that the script is defective if it contains a code smell.
+1. UR1: Due to an impure initialiser, the variable value may have changed.
+2. UR2: The upstream variable has been redefined, so the variable value may have changed.
+3. UO1: A new definition overrides a previous definition at a higher precedence without taking the previous definition into account.
+4. UO2: A variable definition is manifested while a previous definition already exists, so the definition is unused.
+5. HP1: "set_fact" is unnecessarily used when both the expression and all task conditions already took higher precedence.
+6. HP2: "include_vars" is unnecessarily used when it will be executed unconditionally.
+
+The followings are example of Ansible scripts.
+Q1: 
+---
+# Variable setup.
+- name: Include OS-specific variables.
+  include_vars: "{{ ansible_os_family }}.yml"
+
+- name: Define php_packages.
+  set_fact:
+    php_packages: "{{ __php_packages | list }}"
+  when: php_packages is not defined
+
+- name: Define php_webserver_daemon.
+  set_fact:
+    php_webserver_daemon: "{{ __php_webserver_daemon }}"
+  when: php_webserver_daemon is not defined
+
+- name: Define php_conf_path.
+  set_fact:
+    php_conf_path: "{{ __php_conf_path }}"
+  when: php_conf_path is not defined
+
+- name: Define php_extension_conf_path.
+  set_fact:
+    php_extension_conf_path: "{{ __php_extension_conf_path }}"
+  when: php_extension_conf_path is not defined
+
+# Setup/install tasks.
+- include: setup-RedHat.yml
+  when: ansible_os_family == 'RedHat'
+
+- include: setup-Debian.yml
+  when: ansible_os_family == 'Debian'
+
+- name: Check the installed version of PHP.
+  shell: php -r "echo PHP_VERSION;"
+  register: php_version
+  changed_when: false
+
+- name: Disable opcache if PHP version is < 5.5.
+  set_fact:
+    php_opcache_enable: 0
+  when: "php_version.stdout.split('.')[0] == '5' and php_version.stdout.split('.')[1] < '5'"
+
+# Configure PHP.
+- include: configure.yml
+A1: This code contains a code smell of type UO1, because Potential unintended unconditional override of variable "php_opcache_enable@1".. Therefore, the code is defective.
+Q2: 
+---
+# Variable setup.
+- name: Include OS-specific variables.
+  include_vars: "{{ ansible_os_family }}.yml"
+
+- name: Include distribution and version-specific vars.
+  include_vars: "{{ item }}"
+  with_first_found:
+    - files:
+        - "{{ ansible_distribution }}-{{ ansible_distribution_major_version }}.yml"
+      skip: true
+
+- name: Set the default PHP version for Debian-based OSes.
+  set_fact:
+    php_default_version_debian: "{{ __php_default_version_debian }}"
+  when: php_default_version_debian is not defined and ansible_os_family == 'Debian'
+
+- name: Define the name of the JSON extension package on Debian for PHP <8.
+  set_fact:
+    __php_json_package_debian: "{{ 'php' + php_default_version_debian + '-json' }}"
+  when: ansible_os_family == 'Debian' and php_default_version_debian is version('8.0', '<')
+
+- name: Add the JSON extension on Debian for PHP <8.
+  set_fact:
+    __php_packages: "{{ __php_packages + [__php_json_package_debian] }}"
+  when: __php_json_package_debian is defined and __php_json_package_debian not in __php_packages
+
+- name: Define php_packages.
+  set_fact:
+    php_packages: "{{ __php_packages | list }}"
+  when: php_packages is not defined
+
+- name: Define php_webserver_daemon.
+  set_fact:
+    php_webserver_daemon: "{{ __php_webserver_daemon }}"
+  when: php_webserver_daemon is not defined
+
+- name: Define php_conf_paths.
+  set_fact:
+    php_conf_paths: "{{ __php_conf_paths }}"
+  when: php_conf_paths is not defined
+
+- name: Define php_extension_conf_paths.
+  set_fact:
+    php_extension_conf_paths: "{{ __php_extension_conf_paths }}"
+  when: php_extension_conf_paths is not defined
+
+- name: Define php_apc_conf_filename.
+  set_fact:
+    php_apc_conf_filename: "{{ __php_apc_conf_filename }}"
+  when: php_apc_conf_filename is not defined
+
+- name: Define php_opcache_conf_filename (Ubuntu 16.04).
+  set_fact:
+    php_opcache_conf_filename: "10-opcache.ini"
+  when: php_opcache_conf_filename is not defined and ansible_distribution_version == "16.04"
+
+- name: Define php_opcache_conf_filename.
+  set_fact:
+    php_opcache_conf_filename: "{{ __php_opcache_conf_filename }}"
+  when: php_opcache_conf_filename is not defined
+
+- name: Define php_fpm_conf_path.
+  set_fact:
+    php_fpm_conf_path: "{{ __php_fpm_conf_path }}"
+  when: php_fpm_conf_path is not defined
+
+# Setup/install tasks.
+- include_tasks: setup-RedHat.yml
+  when:
+    - not php_install_from_source
+    - ansible_os_family == 'RedHat'
+
+- include_tasks: setup-Debian.yml
+  when:
+    - not php_install_from_source
+    - ansible_os_family == 'Debian'
+
+# Install PHP from source when php_install_from_source is true.
+- include_tasks: install-from-source.yml
+  when: php_install_from_source
+
+# Configure PHP.
+- include_tasks: configure.yml
+- include_tasks: configure-apcu.yml
+- include_tasks: configure-opcache.yml
+- include_tasks: configure-fpm.yml
+A2: This code does not contain a code smell, because it is a fixed version of the above example. Therefore, the code is not defective.
+
+Q: 
+---
+# tasks file for wdijkerman.zabbix
+
+- name: "Fix facts for linuxmint - distribution release"
+  set_fact:
+    ansible_distribution_release: xenial
+
+  when:
+    - ansible_os_family == "Linuxmint"
+    - ansible_distribution_release == "sonya" or ansible_distribution_release == "serena"
+
+- name: "Fix facts for linuxmint - family"
+  set_fact:
+    ansible_os_family: Debian
+  when: ansible_os_family == "Linuxmint"
+
+- name: "Include OS-specific variables"
+  include_vars: "{{ ansible_os_family }}.yml"
+  tags:
+    - zabbix-agent
+
+- name: "Install the correct repository"
+  include: "RedHat.yml"
+  when:
+    - ansible_os_family == "RedHat"
+  tags:
+    - zabbix-agent
+    - init
+    - config
+    - service
+
+- name: "Install the correct repository"
+  include: "Debian.yml"
+  when:
+    - ansible_os_family == "Debian"
+  tags:
+    - zabbix-agent
+    - init
+    - config
+    - service
+
+- name: "Install the correct repository"
+  include: "Suse.yml"
+  when:
+    - ansible_os_family == "Suse"
+  tags:
+    - zabbix-agent
+    - init
+    - config
+    - service
+
+- name: "Set default ip address for zabbix_agent_ip"
+  set_fact:
+    zabbix_agent_ip: "{{ hostvars[inventory_hostname]['ansible_default_ipv4'].address }}"
+  when:
+    - zabbix_agent_ip is not defined
+    - "'ansible_default_ipv4' in hostvars[inventory_hostname]"
+
+- name: "Fail invalid specified agent_listeninterface"
+  fail:
+    msg: "The specified network interface does not exist"
+  when:
+    - zabbix_agent_listeninterface
+    - (zabbix_agent_listeninterface not in ansible_interfaces)
+  tags:
+    - zabbix-agent
+    - config
+
+- name: "Get IP of agent_listeninterface when no agent_listenip specified"
+  set_fact:
+    zabbix_agent_listenip: "{{ hostvars[inventory_hostname]['ansible_' + zabbix_agent_listeninterface]['ipv4'].address | default('0.0.0.0') }}"
+    zabbix_agent_ip: "{{ hostvars[inventory_hostname]['ansible_' + zabbix_agent_listeninterface]['ipv4'].address | default('0.0.0.0') }}"
+  when:
+    - zabbix_agent_listeninterface
+    - not zabbix_agent_listenip
+  tags:
+    - zabbix-agent
+    - config
+    - api
+
+- name: "Default agent_listenip to all when not specified"
+  set_fact:
+    zabbix_agent_listenip: '0.0.0.0'
+  when:
+    - not zabbix_agent_listenip
+  tags:
+    - zabbix-agent
+    - config
+
+- name: "Fail invalid specified agent_listenip"
+  fail:
+    msg: "The agent_listenip does not exist"
+  when:
+    - zabbix_agent_listenip != '0.0.0.0'
+  tags:
+    - zabbix-agent
+    - config
+
+- name: "Allow zabbix_agent to start (SELinux)"
+  selinux_permissive:
+    name: zabbix_agent_t
+    permissive: true
+  become: yes
+  when:
+    - zabbix_selinux
+
+- name: "Configure zabbix-agent"
+  template:
+    src: zabbix_agentd.conf.j2
+    dest: /etc/zabbix/{{ zabbix_agent_conf }}
+    owner: root
+    group: root
+    mode: 0644
+  notify:
+    - restart zabbix-agent
+  become: yes
+  tags:
+    - zabbix-agent
+    - config
+    - init
+
+- name: "Create directory for PSK file if not exist."
+  file:
+    path: "{{ zabbix_agent_tlspskfile | dirname }}"
+    mode: 0755
+    state: directory
+  when:
+    - zabbix_agent_tlspskfile is defined
+    - zabbix_agent_tlspskfile != ''
+
+- name: "Place TLS PSK File"
+  copy:
+    dest: "{{ zabbix_agent_tlspskfile }}"
+    content: "{{ zabbix_agent_tlspsk_secret }}"
+    owner: zabbix
+    group: zabbix
+    mode: 0400
+  when:
+    - zabbix_agent_tlspskfile is defined
+    - zabbix_agent_tlspsk_secret is defined
+    - zabbix_agent_tlspskfile != ''
+    - zabbix_agent_tlspsk_secret != ''
+
+- name: "Create include dir zabbix-agent"
+  file:
+    path: "{{ zabbix_agent_include }}"
+    owner: root
+    group: root
+    state: directory
+  become: yes
+  tags:
+    - config
+    - include
+
+- name: "Make sure the zabbix-agent service is running"
+  service:
+    name: "{{ zabbix_agent_service }}"
+    state: started
+    enabled: yes
+  become: yes
+  tags:
+    - init
+    - service
+
+- name: "Create hostgroups"
+  local_action:
+    module: zabbix_group
+    server_url: "{{ zabbix_url }}"
+    login_user: "{{ zabbix_api_user }}"
+    login_password: "{{ zabbix_api_pass }}"
+    host_group: "{{ zabbix_host_groups }}"
+    state: "{{ zabbix_create_hostgroup }}"
+  when:
+    - zabbix_api_create_hostgroup
+  run_once: True
+  become: no
+  tags:
+    - api
+
+- name: "Create a new host or update an existing host's info"
+  local_action:
+    module: zabbix_host
+    server_url: "{{ zabbix_url }}"
+    login_user: "{{ zabbix_api_user }}"
+    login_password: "{{ zabbix_api_pass }}"
+    host_name: "{{ zabbix_agent_hostname }}"
+    host_groups: "{{ zabbix_host_groups }}"
+    link_templates: "{{ zabbix_link_templates }}"
+    status: "{{ zabbix_host_status }}"
+    state: "{{ zabbix_create_host }}"
+    proxy: "{{ zabbix_proxy }}"
+    interfaces: "{{ zabbix_agent_interfaces }}"
+  when:
+    - zabbix_api_create_hosts
+  become: no
+  tags:
+    - api
+
+- name: "Updating host configuration with macros"
+  local_action:
+    module: zabbix_hostmacro
+    server_url: "{{ zabbix_url }}"
+    login_user: "{{ zabbix_api_user }}"
+    login_password: "{{ zabbix_api_pass }}"
+    host_name: "{{ zabbix_agent_hostname }}"
+    macro_name: "{{ item.macro_key }}"
+    macro_value: "{{ item.macro_value }}"
+  with_items: "{{ zabbix_macros | default([]) }}"
+  when:
+    - zabbix_macros is defined
+    - item.macro_key is defined
+  become: no
+  tags:
+    - api
+
+A:
