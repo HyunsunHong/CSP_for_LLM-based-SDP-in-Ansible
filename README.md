@@ -1,2 +1,5 @@
-# Code-smell guided prompting
-Code-smell guided promping(CSP) is prompting strategy for LLM-based Ansible defect prediction. This repository provides test dataset, prompts strategy variants templates and experiment code for CSP.
+# Code Smell-Guided Prompting for LLM-Based Defect Prediction in Ansible Scripts
+Overview
+This repository contains the code and datasets used for the experiments presented in our paper titled "Exploring Code Smell-Guided Prompting for LLM-Based Defect Prediction in Ansible Scripts". The purpose of this repository is to ensure the reproducibility of our experiments and provide transparency for our research methods.
+
+Although 
