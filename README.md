@@ -53,9 +53,7 @@ pip install -r requirements.txt
 ```
 
 ## Run the experiment
-```
 To run the experiments, simply execute the provided Jupyter notebooks. Ensure you have set the appropriate `api_key` for each notebook.
 
 1. **Gemini**: Open and run `gemini.ipynb`.
 2. **GPT (3.5 or 4.0)**: Open and run `gpt.ipynb`.
-```
