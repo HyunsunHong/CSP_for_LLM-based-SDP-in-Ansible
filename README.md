@@ -34,13 +34,13 @@ This repository contains the code and datasets used for the experiments presente
 - Python 3.8 or higher
 
 ## Getting started
-1. Clone the repository:
+Clone the source code, and install all the packages to run our project.
 ```
 git clone https://github.com/HyunsunHong/CSP_for_LLM-based-SDP-in-Ansible.git
 pip install -r requirements.txt
 ```
 
-## Run the experiment:
+## Run the experiment
 ```
 something
 ```
