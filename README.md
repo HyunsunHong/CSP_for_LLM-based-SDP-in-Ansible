@@ -5,30 +5,42 @@ This repository contains the code and datasets used for the experiments presente
 
 ## Repository Structure
 ```
-├── data
-│ ├── ansible_scripts
-│ ├── code_smells
-│ └── README.md
-├── experiments
-│ ├── baseline
-│ ├── cot_csp
-│ └── README.md
-├── src
-│ ├── preprocessing
-│ ├── prompting
-│ ├── evaluation
-│ └── README.md
-├── results
-│ └── README.md
+├── test_dataset
+│ ├── 1
+│ │ ├── clean
+│ │ └── defect
+│ ├── 2
+│ │ ├── clean
+│ │ └── defect
+│ ├── 3
+│ │ ├── clean
+│ │ └── defect
+│ ├── ...
+│ ├── 29
+│ │ ├── clean
+│ │ └── defect
+│ ├── 30
+│ │ ├── clean
+│ │ └── defect
+├── test_results
+│ ├── gemini
+│ ├── gpt3_5
+│ ├── gpt4_0
+├── gemini.ipynb
+├── gpt.ipynb
 ├── requirements.txt
 └── README.md
 ```
 
-- **data/**: Contains the datasets used for the experiments, including Ansible scripts and code smell indicators.
-- **experiments/**: Contains scripts for running the different experiments, including baseline models and our proposed CoT-CSP method.
-- **src/**: Contains the source code for preprocessing data, generating prompts, and evaluating results.
-- **results/**: Contains the results of the experiments, including performance metrics and evaluation reports.
-- **requirements.txt**: Lists the dependencies and libraries required to run the experiments.
+## Main Components
+
+There are three main components of this repository:
+
+1. **Test Dataset**: Contains 30 pairs of Ansible defect and clean code obtained from GHPR crawling. In total, it includes 60 Ansible scripts (half are defect codes and the other half are clean codes).
+
+2. **LLM Query Experiment Codes**: Consists of two versions, GPT (3.5 or 4.0) and Gemini. Note that you need to modify the `api_key` in each code to run it.
+
+3. **Result Data**: Contains the test results of our research. Each text file is named following the format `label_prompting_method_result.txt`. Each nth row in a text file corresponds to the result of the nth data in the test dataset.
 
 ## Prerequisites
 - Python 3.8 or higher
