@@ -24,23 +24,23 @@ This repository contains the code and datasets used for the experiments presente
 └── README.md
 ```
 
-## Getting Started
+- **data/**: Contains the datasets used for the experiments, including Ansible scripts and code smell indicators.
+- **experiments/**: Contains scripts for running the different experiments, including baseline models and our proposed CoT-CSP method.
+- **src/**: Contains the source code for preprocessing data, generating prompts, and evaluating results.
+- **results/**: Contains the results of the experiments, including performance metrics and evaluation reports.
+- **requirements.txt**: Lists the dependencies and libraries required to run the experiments.
 
-### Prerequisites
+## Prerequisites
 - Python 3.8 or higher
 
-### Installation
+## Getting started
 1. Clone the repository:
 ```
 git clone https://github.com/HyunsunHong/CSP_for_LLM-based-SDP-in-Ansible.git
-```
-
-2. Install the required packages:
-```
 pip install -r requirements.txt
 ```
 
-4. Run the experiment:
+## Run the experiment:
 ```
 something
 ```
