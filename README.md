@@ -7,17 +7,19 @@ This repository contains the code and datasets used for the experiments presente
 
 ### Prerequisites
 - Python 3.8 or higher
-- Virtual environment (recommended)
 
 ### Installation
 1. Clone the repository:
+```
 git clone https://github.com/HyunsunHong/CSP_for_LLM-based-SDP-in-Ansible.git
+```
 
-2. Create and activate a virtual environment:
-python -m venv venv
-source venv/bin/activate # On Windows: venv\Scripts\activate
-
-3. Install the required packages:
+2. Install the required packages:
+```
 pip install -r requirements.txt
+```
 
 4. Run the experiment:
+```
+something
+```
