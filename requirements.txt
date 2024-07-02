@@ -1,2 +1,9 @@
 ﻿google==3.0.0
+google-ai-generativelanguage==0.6.6
+google-api-core==2.19.1
+google-api-python-client==2.135.0
+google-auth==2.31.0
+google-auth-httplib2==0.2.0
+google-generativeai==0.7.1
+googleapis-common-protos==1.63.2
 openai==1.16.2
